@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0003 — The agent operating model: CAF lifecycle, roles, and the AI CoE</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>The agent operating model</h1>
+<p class="subtitle">Design overall AI strategy — CAF phases, business roles, the AI CoE, and multi-agent design</p>
+
+<p>Lesson 3 of your AB-100 course. Lesson 1 picked which rung of the platform ladder to stand on; lesson 2 proved the data estate could hold it. This lesson is the layer above both: how an organization moves from strategy to agents running in production — and who is accountable at each step. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall so far</span>
+<p>Don't scroll back to earlier lessons. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> (Lesson 1) A VP proposes jumping straight to a custom Foundry build "for maximum flexibility." What does the SaaS-first principle say — and what burden does a custom build inherit?</p>
+<details><summary>Reveal</summary>
+<p>Always open by asking whether a prebuilt SaaS agent meets the functional requirements; if yes, stop. Custom builds carry governance, evaluation, and ops burden you must justify — control is paid for with ownership.</p>
+</details>
+<p><strong>2.</strong> (Lesson 2) Name the five grounding dimensions, and say which one fails silently.</p>
+<details><summary>Reveal</summary>
+<p>Accuracy, relevance, timeliness, cleanliness, availability. <strong>Availability</strong> fails silently — retrieval is permission-trimmed per user, so the agent answers from a poorer evidence base and nobody gets an error.</p>
+</details>
+<p><strong>3.</strong> (Connect them) If availability failures are silent, can the data-availability check wait until the agent is in production? Which phase must own it?</p>
+<details><summary>Reveal</summary>
+<p>No — a silent failure never pages anyone; operations telemetry sees a "working" agent. Data availability must be verified <em>before</em> build, as one of the <strong>agent readiness criteria</strong> in the CAF <strong>Plan</strong> phase. That's the map this lesson teaches.</p>
+</details>
+</div>
+
+<h2>The map: CAF phases ↔ the agent lifecycle</h2>
+
+<p>The Cloud Adoption Framework's AI adoption process runs six phases — <strong>Strategy, Plan, Ready, Govern, Secure, Manage</strong>. The agent lifecycle runs four stages — <strong>Plan agents, Govern &amp; secure agents, Build agents, Operate agents</strong>. They interlock, and the interlocking is the exam content. Learn each row as <em>phase → lifecycle stage → named outputs</em>: [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/scenarios/ai/">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/">CAF AI agents hub</a>]</p>
+
+<table>
+  <tr><th>CAF phase</th><th>Lifecycle stage</th><th>What happens</th><th>Named outputs</th></tr>
+  <tr><td><strong>AI Strategy</strong></td><td>Plan agents</td><td>Business outcomes, use-case prioritization, TCO/effort tradeoffs — the SaaS-first ladder from lesson 1 is decided here</td><td><strong>AI strategy brief</strong>; <strong>agent technology plan</strong> (SaaS vs Copilot Studio vs Foundry)</td></tr>
+  <tr><td><strong>AI Plan</strong></td><td>Plan agents</td><td>Skills assessment, proof of concept</td><td><strong>Agent readiness criteria</strong> — data availability, governance readiness, identity model, connectors</td></tr>
+  <tr><td><strong>AI Ready</strong></td><td>Govern &amp; secure — <em>foundation</em></td><td>Landing zones, data access model</td><td><strong>Agent governance charter</strong> — capability access, data boundaries, approvals, monitoring</td></tr>
+  <tr><td><strong>Govern + Secure AI</strong></td><td>Govern &amp; secure — <em>enforcement</em></td><td>Controls over agent behavior, data access, compliance</td><td>Azure Policy enforcement, risk register, reviewed prompts/tools, audit trails, escalation paths</td></tr>
+  <tr><td><strong>Build</strong> (lifecycle stage)</td><td>Build agents</td><td>Standardized build process — knowledge tools, action tools, triggers, evaluations; environment strategy</td><td>CI/CD with policy guardrails</td></tr>
+  <tr><td><strong>Manage AI</strong></td><td>Operate agents</td><td>Deployment authority, telemetry/SLOs, rollout patterns, behavior monitoring</td><td><strong>Agent Ops playbook</strong> — SLOs, retraining rules, deprecation</td></tr>
+</table>
+
+<p>Two structural notes. First, the <strong>Govern &amp; secure</strong> lifecycle stage spans two CAF moments: Ready lays the <em>foundation</em> (landing zone, charter, data access model), while Govern + Secure <em>enforce</em> it. Second, <strong>Build</strong> is a lifecycle stage, not a seventh CAF phase — it executes on the Ready foundation, under Govern/Secure controls, with a standardized process and an environment strategy. [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/governance-security-across-organization">source</a>]</p>
+
+<h3>Where the artifacts live — the exam's favorite nuance</h3>
+
+<p>Every artifact above sounds like "governance," so questions scatter them across four phases on purpose. Anchor each artifact to the <em>verb</em> of its phase:</p>
+
+<table>
+  <tr><th>Artifact</th><th>Lives in</th><th>Memory hook</th></tr>
+  <tr><td>Agent readiness criteria</td><td><strong>AI Plan</strong></td><td>Plan <em>checks readiness</em> — the entry gate, before any foundation exists</td></tr>
+  <tr><td>Agent governance charter</td><td><strong>AI Ready</strong></td><td>Ready <em>founds</em> governance; it does not enforce it</td></tr>
+  <tr><td>Azure Policy, risk register, audit trails, escalation</td><td><strong>Govern + Secure AI</strong></td><td>Enforcement verbs: review, audit, escalate</td></tr>
+  <tr><td>Telemetry, SLOs, rollout patterns, Agent Ops playbook</td><td><strong>Manage AI</strong></td><td>Operate verbs: monitor, roll out, retrain, deprecate</td></tr>
+</table>
+
+<p>The trap answers swap adjacent cells: readiness criteria "in Ready" (wrong — that's the charter), the charter "in Govern" (wrong — that's enforcement), SLOs "in the charter" (wrong — that's the Agent Ops playbook, in Manage). [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/integrate-manage-operate">source</a>]</p>
+
+<p>The same unit sketches a RACI: the <strong>architect</strong> is A/R on strategy, the agent technology plan, build, and operate; the <strong>platform team</strong> A/R on the landing zone; <strong>security</strong> A/R on agent governance policy; the <strong>data owner</strong> C/R on grounding data. Keep that distribution in mind — it reappears in the roles below. [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/scenarios/ai/">source</a>]</p>
+
+<h2>Roles: who does what — and what breaks when they're missing</h2>
+
+<p>AB-100 tests business roles as <em>failure-mode pairings</em>: the question stem describes a symptom, you name the absent role. Learn the right-hand column cold — it <em>is</em> the question stem. [<a href="https://learn.microsoft.com/en-us/training/modules/scale-ai/3-organize-ai-success">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/intro-ai-center-excellence/4-determining-organizational-roles-responsibilities">source</a>]</p>
+
+<table>
+  <tr><th>Role</th><th>Owns</th><th>If missing</th></tr>
+  <tr><td><strong>Executive sponsor</strong></td><td>Funding, visibility, political air-cover</td><td>Stalled adoption and funding</td></tr>
+  <tr><td><strong>AI CoE lead</strong></td><td>Oversight, standards, Responsible AI pillars</td><td>No oversight; RAI pillar breakdown</td></tr>
+  <tr><td><strong>Product owner</strong></td><td>Backlog, value, iteration</td><td>Listless solutions; tech debt</td></tr>
+  <tr><td><strong>Business domain specialist</strong></td><td>Correctness of domain content and answers</td><td>Incorrect-information risk</td></tr>
+  <tr><td><strong>Data owner / steward</strong></td><td>Grounding data quality and compliance</td><td>Poor quality; compliance risk</td></tr>
+  <tr><td><strong>Responsible AI / compliance officer</strong></td><td>Ethics, bias, regulatory fit</td><td>Ethics and bias issues surface late</td></tr>
+  <tr><td><strong>Change management &amp; skilling lead</strong></td><td>Training, enablement, adoption</td><td>Adoption failure despite working technology</td></tr>
+</table>
+
+<p>How you get there in practice: run a <strong>role-mapping workshop</strong>, then a <strong>gap analysis</strong>, then build the <strong>RACI</strong>. The supporting cast includes the use case owner, process owner, knowledge manager, AI adoption champion, business analyst, and QA lead. Azure's Well-Architected technical personas — AI Engineer, Data Scientist, Data Engineer, Application Developer, MLOps/AIOps Engineer — complement the business roles; they don't replace them. A symptom like "the model works but nobody uses it" is never solved by adding another engineer. [<a href="https://learn.microsoft.com/en-us/training/modules/scale-ai/3-organize-ai-success">source</a>]</p>
+
+<h2>The AI Center of Excellence</h2>
+
+<p>The AI CoE is the organizational structure that makes the roles and the CAF map durable. Three elements are non-negotiable: <strong>executive sponsorship</strong>, a <strong>dedicated CoE leader</strong>, and a <strong>multidisciplinary team</strong> — strategy, data, ML, governance, security, ops, and business SMEs. [<a href="https://learn.microsoft.com/en-us/training/modules/intro-ai-center-excellence/">source</a>]</p>
+
+<h3>Placement and maturity</h3>
+
+<table>
+  <tr><th>Placement option</th><th>Choose when</th></tr>
+  <tr><td>Inside the existing CCoE</td><td>Cloud adoption is already centralized — reuse the governance muscle</td></tr>
+  <tr><td>Within Data / Enterprise Architecture</td><td>A strong data or EA org already exists to host it</td></tr>
+  <tr><td>Standalone</td><td>Only if no supporting team exists</td></tr>
+</table>
+
+<table>
+  <tr><th>Maturity stage</th><th>Posture</th><th>Who owns delivery</th></tr>
+  <tr><td><strong>Centralized</strong></td><td>Gatekeeper with approval authority</td><td>The CoE builds or approves everything</td></tr>
+  <tr><td><strong>Hybrid</strong></td><td>Shared model</td><td>Split between CoE and product teams</td></tr>
+  <tr><td><strong>Advisory</strong></td><td>Consultant; governance embedded in platforms</td><td>Product teams own delivery</td></tr>
+</table>
+
+<p>Centralized is a <em>starting</em> stage, not a destination — the arc exists because gatekeeping doesn't scale. The exam likes "the CoE should remain the permanent approval authority for all agents" as a wrong answer.</p>
+
+<h3>Functions and failure modes</h3>
+
+<p>Six functions: <strong>AI strategy</strong>; <strong>skills development</strong> (gap assessments, learning paths, prompt/agent libraries); <strong>governance &amp; standards</strong>; <strong>project intake &amp; prioritization</strong>; <strong>delivery support</strong> (patterns, PoCs); <strong>operations</strong> (performance and drift monitoring, shared repos and pipelines). [<a href="https://learn.microsoft.com/en-us/training/modules/intro-ai-center-excellence/">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/">CAF</a>]</p>
+
+<table>
+  <tr><th>Failure mode</th><th>What you see</th></tr>
+  <tr><td>Overcentralization</td><td>The CoE becomes the bottleneck; project queues grow</td></tr>
+  <tr><td>Gatekeeper, not enabler</td><td>Business units route around the CoE entirely</td></tr>
+  <tr><td>Undergovernance</td><td>Shadow AI proliferates outside any standard</td></tr>
+  <tr><td>No executive sponsor</td><td>The initiative stalls — no funding, no air-cover</td></tr>
+  <tr><td>No data governance</td><td>Compliance risk accumulates silently</td></tr>
+  <tr><td>No change management</td><td>Low adoption despite working technology</td></tr>
+</table>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory: name the six CAF phases and the four agent-lifecycle stages, then place these four artifacts — agent readiness criteria, agent governance charter, Azure Policy enforcement, Agent Ops playbook. Scroll up and check. Anything you misplaced tells you which phase's <em>verb</em> you haven't attached yet.
+</div>
+
+<h2>Single agent or many — the triggers, deepened</h2>
+
+<p>Lesson 1 gave you the rule: single agent first, multi-agent only on explicit triggers. Here is the full trigger set, with <em>why a single agent fails</em> in each case — that mechanism is what separates trigger from taste: [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/single-agent-multiple-agents">source</a>, <a href="https://microsoft.github.io/Microsoft-AI-Decision-Framework">Microsoft AI Decision Framework</a>]</p>
+
+<table>
+  <tr><th>Trigger</th><th>Why one agent struggles</th><th>What multi-agent buys</th></tr>
+  <tr><td><strong>Crossing security/compliance boundaries</strong></td><td>One agent's permissions span what policy says must stay separated</td><td>Scoped permissions per agent; the boundary holds</td></tr>
+  <tr><td><strong>Multiple teams own distinct knowledge, data, release cycles</strong></td><td>One backlog and one deployment can't serve two cadences</td><td>Each team owns, versions, and releases its own agent</td></tr>
+  <tr><td><strong>Roadmap spans 3–5+ functions</strong></td><td>Instructions grow incoherent; evaluations blur across functions</td><td>Modular specialization — single clear responsibility per agent</td></tr>
+  <tr><td><strong>Dependent action series across 2+ workstreams</strong></td><td>One prompt must hold the entire choreography</td><td>Orchestrated handoffs with explicit contracts</td></tr>
+</table>
+
+<p>Before paying for many agents, exhaust the cheap fixes: <strong>persona switching, better retrieval, policy controls, a larger context window</strong>. Mediocre retrieval is a grounding problem (lesson 2), not an agent-count problem. And when you do go multi-agent, the platforms divide the labor: M365 Copilot hosts domain agents for immediate value, Copilot Studio hosts business-led task/retrieval agents, and Foundry hosts <strong>connected agents</strong> with complex orchestration. [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/technology-solutions-plan-strategy">source</a>]</p>
+
+<h2>Orchestration patterns (Microsoft Agent Framework)</h2>
+
+<p>Five named patterns. Learn each as <em>what it is → when to choose it</em>: [<a href="https://github.com/microsoft/multi-agent-reference-architecture">source</a>]</p>
+
+<table>
+  <tr><th>Pattern</th><th>What it is</th><th>Choose when</th></tr>
+  <tr><td><strong>Sequential</strong></td><td>Deterministic pipeline; each agent's output feeds the next</td><td>Fixed stages, order matters, auditability wanted</td></tr>
+  <tr><td><strong>Concurrent</strong></td><td>Parallel subtasks whose results are aggregated</td><td>Independent subtasks; breadth or latency wins</td></tr>
+  <tr><td><strong>Group chat</strong></td><td>Moderated discussion; agents propose, a moderator selects</td><td>Deliberation- or proposal-style problems</td></tr>
+  <tr><td><strong>Handoff</strong></td><td>Control transfers to a specialist agent or human when a threshold trips</td><td>Escalation on confidence, risk, or policy gates</td></tr>
+  <tr><td><strong>Magentic</strong></td><td>Dynamic specialization; an orchestrator pulls in expert agents at runtime</td><td>The expert set isn't known until runtime</td></tr>
+</table>
+
+<p><strong>The reliability rule.</strong> Treat orchestration as a <em>workflow</em> — with state, branching, and error handling — not as a conversation. Avoid prompt-to-prompt daisy chains: if agent A's prose feeds agent B's prompt with no contract in between, you have a demo, not a system. [<a href="https://github.com/microsoft/multi-agent-reference-architecture">source</a>]</p>
+
+<h3>Connected agents: the design checklist</h3>
+
+<ol>
+  <li><strong>Define the main agent</strong> — mission, guardrails, metrics, tooling. It routes to specialists in natural language.</li>
+  <li><strong>Identify connected agents by role</strong> — Planner, Researcher, Reviewer, Actuator — each with a minimal instruction set and <strong>scoped permissions</strong>.</li>
+  <li><strong>Model the collaboration</strong> — contracts and state handoffs: <strong>pass IDs, not raw content</strong>. The receiving agent resolves the reference itself, which keeps payloads small, permissions scoped, and audit trails clean.</li>
+  <li><strong>Prototype, then iterate</strong> — and prune redundant agents as the design stabilizes.</li>
+</ol>
+
+<p>Evaluation checkpoints for any connected-agent design: one clear responsibility per agent; security scopes per agent; graceful degradation when a specialist fails; observability hooks at every handoff. [<a href="https://github.com/microsoft/multi-agent-reference-architecture">source</a>]</p>
+
+<h2>The prompt library: one governed artifact</h2>
+
+<p>A prompt library is the CoE's reusable-prompt asset — curated and governed for consistency, governance, efficiency, quality, and scalability. Keep it in perspective: it's one artifact type the CoE's skilling/standards function owns, not a program of its own. [<a href="https://learn.microsoft.com/en-us/azure/copilot/write-effective-prompts">source</a>]</p>
+
+<p><strong>Quality bar — the four pillars:</strong> Clarity, Context, Constraints, Output format. <strong>Governance metadata per prompt:</strong> purpose, owner, version, last-updated, applicable systems, risk classification, grounding sources. <strong>Storage options:</strong> SharePoint, GitHub Enterprise, Azure DevOps, or Copilot Studio prompt guides. <strong>Lifecycle:</strong> version control; review and approval by domain experts, RAI reviewers, and security; testing across inputs, edge cases, and model versions; retire outdated prompts and monitor drift. [<a href="https://learn.microsoft.com/en-us/azure/copilot/write-effective-prompts">source</a>]</p>
+
+<p><strong>The maturity model</strong> runs L1 basic → L2 guided → L3 structured → L4 optimized (few-shot, formatting) → L5 enterprise (templates, version control, governed library). The exam phrase to recognize is "enterprise governed prompt library" — that's L5, and it's a CoE function, not a team-folder habit. [<a href="https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/prompt-engineering">source</a>]</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">1. A program lead is writing the entry gate every agent proposal must pass before build begins: data availability, governance readiness, identity model, connectors. Which CAF phase produces this artifact?</p>
+  <button class="opt" data-key="a">AI Strategy — outcomes and prioritization</button>
+  <button class="opt" data-key="b">AI Plan — readiness criteria and PoC</button>
+  <button class="opt" data-key="c">AI Ready — landing zone and charter</button>
+  <button class="opt" data-key="d">Govern AI — policy and enforcement</button>
+  <p class="why">Agent readiness criteria are an output of AI Plan, alongside the skills assessment and proof of concept. Strategy produces the brief and technology plan; Ready builds the landing zone and governance charter; Govern enforces. Readiness is the gate checked <em>during planning</em> — before foundations exist.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">2. Where is the agent governance charter — capability access, data boundaries, approvals, monitoring — first established?</p>
+  <button class="opt" data-key="a">In Plan, beside the agent readiness criteria</button>
+  <button class="opt" data-key="b">In Govern, beside the Azure Policy enforcement</button>
+  <button class="opt" data-key="c">In Ready, as the governance-security foundation</button>
+  <button class="opt" data-key="d">In Manage, inside the Agent Ops playbook</button>
+  <p class="why">Ready lays the foundation: landing zones, the data access model, and the charter itself. Govern + Secure then enforce it — Azure Policy, risk register, audit trails, escalation. The exam splits foundation (Ready) from enforcement (Govern/Secure) precisely because the names blur.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">3. A funded, sponsored, well-governed agent launches on schedule. Six months later adoption is near zero: users were never trained and drifted back to old habits. Which missing role best explains it?</p>
+  <button class="opt" data-key="a">Executive sponsor — funding and air-cover stall</button>
+  <button class="opt" data-key="b">AI CoE lead — oversight and standards dissolve</button>
+  <button class="opt" data-key="c">Data steward — grounding quality silently degrades</button>
+  <button class="opt" data-key="d">Change management lead — users never get enabled</button>
+  <p class="why">Sponsorship and governance were present; what failed is enablement. The change management &amp; skilling lead owns training and adoption — without one, working technology dies of disuse. Match the symptom to the failure-mode column, not to the most senior-sounding role.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">4. A claims process must run intake → coverage check → payout in strict order, each stage a specialist agent, fully deterministic, no parallelism wanted. Which orchestration pattern?</p>
+  <button class="opt" data-key="a">Sequential</button>
+  <button class="opt" data-key="b">Concurrent</button>
+  <button class="opt" data-key="c">Group chat</button>
+  <button class="opt" data-key="d">Magentic</button>
+  <p class="why">Fixed stages in a fixed order with deterministic control flow is the sequential pattern — a pipeline where each agent's output feeds the next. Concurrent runs independent subtasks in parallel; group chat deliberates; Magentic picks experts dynamically at runtime.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">5. A support agent must yield control — to a specialist agent or a human — whenever its confidence drops or a risk threshold trips. Which pattern fits?</p>
+  <button class="opt" data-key="a">A sequential pipeline with fixed deterministic stages</button>
+  <button class="opt" data-key="b">A concurrent fan-out with aggregated subtask results</button>
+  <button class="opt" data-key="c">A handoff that transfers control on threshold</button>
+  <button class="opt" data-key="d">A group chat with a moderator selecting proposals</button>
+  <p class="why">Handoff exists for exactly this: transfer to a specialist or human when a threshold — confidence, risk, policy — is crossed. Sequential and concurrent keep the same agents in the same roles throughout; group chat deliberates rather than escalates.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">6. The AI CoE must personally approve and build every agent. Nine months in, its queue is forty projects deep, and two business units have started building agents in secret. Name the failure mode.</p>
+  <button class="opt" data-key="a">Overcentralization — the gatekeeper became the bottleneck</button>
+  <button class="opt" data-key="b">Undergovernance — standards were never written down</button>
+  <button class="opt" data-key="c">Sponsorship gap — funding and visibility ran dry</button>
+  <button class="opt" data-key="d">Placement error — the CoE reported to the wrong executive</button>
+  <p class="why">A centralized gatekeeper approving everything collapses into a bottleneck — and the secret building is the <em>symptom</em> (shadow AI), not the disease. The maturity arc exists to escape this: evolve centralized → hybrid → advisory, with governance embedded in platforms rather than in a queue.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">7. A team wants to split one HR policy Q&amp;A agent into four agents — one per policy domain — because retrieval quality is mediocre. One SharePoint estate, one team, one release cycle. Your advice?</p>
+  <button class="opt" data-key="a">Approve the split; more agents improve retrieval precision</button>
+  <button class="opt" data-key="b">Keep one agent; fix retrieval and try persona switching</button>
+  <button class="opt" data-key="c">Split into two agents to halve each retrieval scope</button>
+  <button class="opt" data-key="d">Rebuild the agent pro-code in Foundry before splitting</button>
+  <p class="why">No trigger is present: no boundary crossed, one owning team, one release cycle, a single function. Mediocre retrieval is a grounding problem — scope knowledge sources and clean the content — and persona switching covers per-audience tone. Multi-agent would multiply cost and governance without fixing retrieval.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">8. Which situation most clearly justifies a multi-agent design?</p>
+  <button class="opt" data-key="a">A Q&amp;A agent that answers in two languages</button>
+  <button class="opt" data-key="b">A task agent calling three connectors in sequence</button>
+  <button class="opt" data-key="c">A single agent whose instructions grew past one page</button>
+  <button class="opt" data-key="d">A five-function roadmap with separate owning teams</button>
+  <p class="why">A roadmap spanning 3–5+ functions plus multiple owning teams with distinct release cycles are explicit triggers. Languages, connector counts, and long instructions are single-agent problems — solved with retrieval, persona switching, or tighter instructions, not orchestration.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">9. Leadership asks where SLOs, retraining rules, and deprecation criteria for production agents are documented. You point to:</p>
+  <button class="opt" data-key="a">The agent governance charter from Ready</button>
+  <button class="opt" data-key="b">The Agent Ops playbook from Manage</button>
+  <button class="opt" data-key="c">The agent technology plan from Strategy</button>
+  <button class="opt" data-key="d">The agent readiness criteria from Plan</button>
+  <p class="why">Operate-stage artifacts live in Manage: telemetry, SLOs, rollout patterns, behavior monitoring, and the Agent Ops playbook with retraining and deprecation rules. The charter governs access and boundaries; the technology plan picks platforms; readiness criteria gate the build.</p>
+</div>
+
+<h2>Apply it: three operating-model problems</h2>
+
+<p>Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> Contoso (12,000 employees, financial services) is standing up an AI CoE. The CIO will personally sponsor it and proposes a standalone three-person team that must approve every agent use case before any work begins. Critique the design.</p>
+<details><summary>Your call?</summary>
+<p><strong>Two elements right, the rest is a failure-mode checklist.</strong> Executive sponsorship and a dedicated leader are present — good. But three generalists are not the multidisciplinary team (strategy, data, ML, governance, security, ops, business SMEs). Standalone placement is the last resort, only if no supporting team exists — check for a CCoE or Data/EA home first. And "approves everything" is the centralized gatekeeper posture: acceptable as a <em>starting</em> maturity stage only with an explicit path toward hybrid, then advisory — otherwise it becomes the bottleneck that breeds shadow AI. Finally, assign the six functions — strategy, skilling, governance/standards, intake/prioritization, delivery support, operations — not just approval power. [<a href="https://learn.microsoft.com/en-us/training/modules/intro-ai-center-excellence/">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> Fabrikam's returns flow: an intake step validates claims, a warranty step checks coverage, a fraud step scores risk, a resolution step issues refunds. Customer Service owns intake and resolution; the Warranty and Fraud teams own their steps and ship on their own cadence. The lead developer proposes one agent with "a really good prompt." Settle the debate — and if multi-agent, which pattern(s)?</p>
+<details><summary>Your call?</summary>
+<p><strong>Multi-agent, justified twice over</strong>: multiple owning teams with distinct release cycles, and a dependent action series across workstreams — with fraud scoring likely behind a compliance boundary besides. One prompt would force a single team to own everyone's logic and hold everyone's permissions. Patterns: <strong>Sequential</strong> for the deterministic intake → warranty → resolution pipeline, plus <strong>Handoff</strong> to a human when the fraud score crosses threshold. Contracts: pass claim IDs between agents, not raw content; scope each agent's permissions to its domain; run the whole thing as a workflow with state, branching, and error handling — no prompt-to-prompt daisy chains. [<a href="https://github.com/microsoft/multi-agent-reference-architecture">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> Northwind's CoE finds two hundred copy-pasted prompts circulating in a Teams channel — some embed customer data, several still enforce last year's policy. An engineer proposes "dropping them all in a shared SharePoint folder." Is that a prompt library?</p>
+<details><summary>Your call?</summary>
+<p><strong>That's storage, not a library.</strong> A governed library needs the metadata (purpose, owner, version, last-updated, applicable systems, risk classification, grounding sources), a review/approval workflow (domain experts, RAI, security), testing across inputs and model versions, and lifecycle rules — retire the outdated, monitor drift — plus the four-pillar quality bar: clarity, context, constraints, output format. The customer-data prompts need remediation, not a folder. Done right, this is the jump from L1 ad-hoc to L5 enterprise governed library, owned by the CoE's skilling/standards function. [<a href="https://learn.microsoft.com/en-us/azure/copilot/write-effective-prompts">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+The orchestration section is a direct down payment on AI-103. Its Build-agents domain examines "Implement orchestrated multi-agent solutions" and "Define agent roles, goals, conversation-tracking approach, tool schemas" — the same five patterns (sequential, concurrent, group chat, handoff, Magentic) and the same connected-agent roles, but at implementation depth: you'll build them with the Microsoft Agent Framework SDK in Python, wire handoff contracts, and enforce safeguards and approval-flow controls ("Build autonomous or semiautonomous workflows with safeguards and approval flow controls"). The vocabulary is identical — scoped permissions, state handoffs, observability hooks at handoffs; only the altitude changes. AB-100 asks <em>which pattern fits</em> and whether multi-agent is justified at all; AI-103 asks you to implement it, then "integrate monitoring into deployed agents, evaluate agent behavior, perform error analysis" — the Manage phase, hands-on. Learn the selection logic now; the SDK reps land right after.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now map any agent initiative onto the CAF↔lifecycle grid with its named outputs, staff it with the seven business roles, shape the CoE that governs it, and pick — or reject — a multi-agent orchestration pattern with reasons.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/">CAF: AI agents</a> (15 min) — the hub that ties the technology plan, data architecture, governance, and operate guidance from this lesson into one adoption path.
+</div>
+
+<div class="teacher">
+Which mapping felt arbitrary — readiness in Plan versus Ready, the charter in Ready versus Govern, or the CoE maturity arc? Push back; those phase boundaries are exactly where AB-100 plants its distractors, and your questions set the agenda for lesson 0004 (ROI &amp; the model router).
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0003 · Prev: <a href="../lessons/0002-grounding-data-ai-ready-estate.html">lesson 0002</a> · Glossary: <a href="../reference/glossary.html">strategy &amp; operating-model terms</a> · Next: <a href="../lessons/0004-roi-tco-model-router.html">lesson 0004 ROI &amp; model router</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary — AB-100 agentic platform terms</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Glossary</h1>
+<p class="subtitle">AB-100 working vocabulary — every lesson adheres to these definitions</p>
+
+<h2>Platforms &amp; frameworks</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>Microsoft Foundry</td><td>Pro-code PaaS for building, evaluating, and operating custom AI apps and agents; model catalog, Agent Service, evals, control plane.</td></tr>
+<tr><td>Foundry Tools</td><td>Catalog of agent tools in Foundry: retrieval/grounding, connectors, workflow/action, reasoning, and specialized tools.</td></tr>
+<tr><td>Copilot Studio</td><td>Low-code SaaS for building task, retrieval, and autonomous agents; topics, knowledge, actions, agent flows; governed SaaS boundary.</td></tr>
+<tr><td>Agent Builder</td><td>Guided declarative-agent authoring surface inside Microsoft 365 Copilot; simplest path to a custom M365 agent.</td></tr>
+<tr><td>Declarative agent</td><td>M365 Copilot agent defined by instructions + knowledge + actions; runs on Copilot's orchestrator, inherits its guardrails.</td></tr>
+<tr><td>AI hub</td><td>Central workspace in Power Platform for managing models, Copilots, and AI features at scale.</td></tr>
+<tr><td>AI Builder</td><td>Power Platform's prebuilt + custom models for classification, prediction, extraction, document processing.</td></tr>
+<tr><td>Dataverse</td><td>Power Platform/D365 data platform; tables, security model, and knowledge substrate for agents.</td></tr>
+<tr><td>CAF</td><td>Cloud Adoption Framework for Azure; its AI scenario defines adoption phases: Strategy, Plan, Ready, Govern, Secure, Manage.</td></tr>
+<tr><td>Agent lifecycle (CAF)</td><td>Plan agents → Govern &amp; secure agents → Build agents → Operate agents; maps onto CAF phases.</td></tr>
+<tr><td>AI CoE</td><td>AI Center of Excellence; owns strategy, governance, standards, intake/prioritization, skilling. Evolves centralized → hybrid → advisory.</td></tr>
+<tr><td>Power Platform WAF</td><td>Well-Architected Framework pillars for low-code: Reliability, Security, Operational Excellence, Performance Efficiency, Experience Optimization.</td></tr>
+</table>
+
+<h2>Agent anatomy (Copilot Studio)</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>Topic</td><td>Unit of conversational logic bound to an intent; built from trigger phrases, messages, questions, conditions, actions.</td></tr>
+<tr><td>System topic</td><td>Built-in topic for greeting, escalation, fallback, disambiguation, errors, end-of-conversation.</td></tr>
+<tr><td>Fallback topic</td><td>System topic that handles unmatched intent; should acknowledge, offer alternatives, optionally escalate, capture feedback.</td></tr>
+<tr><td>Entity extraction</td><td>Pulling structured values (names, numbers, dates) from user utterances in a topic so actions receive clean inputs.</td></tr>
+<tr><td>Generative orchestration</td><td>LLM-driven mode: agent selects topics/tools/knowledge by description, combines sources, auto-prompts for missing inputs.</td></tr>
+<tr><td>Classic orchestration</td><td>Trigger-phrase matching mode; single topic selected; knowledge only as fallback or explicit call.</td></tr>
+<tr><td>CLU</td><td>Azure Conversational Language Understanding; trainable intent/entity models for varied phrasing within bounded domains.</td></tr>
+<tr><td>Knowledge source</td><td>Grounding content for generative answers: SharePoint, OneDrive, Dataverse, public sites, uploaded docs, Azure AI Search, connectors. Limits: 500 knowledge objects/agent; ≤5 unstructured sources in simultaneous retrieval.</td></tr>
+<tr><td>Generative answers node</td><td>"Conversational boosting" node; dynamic retrieval-based answers without authored topics; usable as fallback.</td></tr>
+<tr><td>Conversational boosting</td><td>The system topic generative orchestration auto-creates; produces dynamic answers from knowledge when no topic matches.</td></tr>
+<tr><td>Node-level knowledge source</td><td>Knowledge attached to a specific generative answers node or topic; prioritized over agent-level sources when both exist.</td></tr>
+<tr><td>Action</td><td>Executable operation via connector, API, Dataverse, or flow; has inputs, output schema, auth, error handling.</td></tr>
+<tr><td>Agent flow</td><td>Copilot Studio-native automation (trigger + actions); no Power Automate license required; billed from Copilot message capacity.</td></tr>
+<tr><td>Cloud flow</td><td>Power Automate automation requiring its own license; the enterprise-integration counterpart to Copilot Studio agent flows.</td></tr>
+<tr><td>Prompt action</td><td>Reusable instruction block (goal, context, rules, examples, output format) an agent calls to generate/reason/transform.</td></tr>
+<tr><td>Prompt Coach</td><td>Copilot Studio template enforcing structured prompt sections for consistency.</td></tr>
+<tr><td>Trigger (event)</td><td>Event that starts an autonomous agent (Dataverse row, schedule, file upload); must be explicitly authorized; affects billing.</td></tr>
+<tr><td>Computer Use</td><td>Copilot Studio capability letting agents operate UIs (click, type, read screen) when no API/connector exists.</td></tr>
+<tr><td>Extensibility layer</td><td>One of four Copilot Studio customization levels — instruction-level, skill/capability, integration, pro-code (VS Code) — in increasing order of power and cost.</td></tr>
+<tr><td>Site context</td><td>SharePoint agent behavior: the agent automatically knows its host site, treats it as primary grounding, and adapts to its structure.</td></tr>
+<tr><td>Deep reasoning</td><td>Copilot Studio reasoning mode (preview) for multi-step, constraint-heavy tasks; slower and costlier than standard.</td></tr>
+<tr><td>Standard reasoning</td><td>Copilot Studio's default reasoning mode: fast, low-compute responses for high-volume, simple tasks; contrast deep reasoning.</td></tr>
+</table>
+
+<h2>Dynamics 365 customer experience</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>Business terms</td><td>Standardized org vocabulary in Dataverse fields/option sets/classification metadata that Copilot reads for summaries and recommendations; mis-mapped fields yield misinterpreted categories, outdated terminology, wrong next steps.</td></tr>
+<tr><td>Structured summary format</td><td>Copilot conversation summary in predefined sections (Customer Issue, Actions Taken, Pending Items, Next Steps, Resolution Status); for documentation standards/regulated industries; contrast the narrative paragraph format.</td></tr>
+<tr><td>Omnichannel</td><td>D365 Customer Service/Contact Center model unifying voice, live chat, and digital messaging (SMS/WhatsApp) under one routing and agent experience.</td></tr>
+<tr><td>IVR</td><td>Interactive Voice Response; the telephony self-service front end a voice agent serves — demands short phrasing, confirmation steps, and interruption/backtracking tolerance.</td></tr>
+<tr><td>Custom connector</td><td>Power Platform wrapper for an external API (host/base URL/security + OpenAPI definition), consumed by Power Apps, Power Automate, and Copilot Studio actions; for Copilot in D365 Sales it must be created in a Dynamics 365–enabled environment (default environment unsupported).</td></tr>
+</table>
+
+<h2>Interoperability &amp; protocols</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>MCP</td><td>Model Context Protocol; standardized contract for agents to consume tools/data context. In D365 F&amp;O exposes entities, metadata, domain models.</td></tr>
+<tr><td>MCP context boundary</td><td>The scope of business context an MCP contract exposes to an agent; aligned to compliance domains, enforced least-privilege by user identity.</td></tr>
+<tr><td>A2A</td><td>Agent2Agent protocol; controlled delegation and context sharing between agents.</td></tr>
+<tr><td>Microsoft Agent Framework</td><td>SDK implementing orchestration patterns: sequential, concurrent, group chat, handoff, Magentic.</td></tr>
+<tr><td>Sequential orchestration</td><td>Pipeline pattern: agents run in fixed order, each output feeding the next; deterministic and auditable.</td></tr>
+<tr><td>Concurrent orchestration</td><td>Parallel pattern: independent subtasks run simultaneously and results are aggregated.</td></tr>
+<tr><td>Group chat orchestration</td><td>Moderated pattern: agents propose and deliberate; a moderator selects.</td></tr>
+<tr><td>Handoff orchestration</td><td>Escalation pattern: control transfers to a specialist agent or human when a threshold trips.</td></tr>
+<tr><td>Magentic orchestration</td><td>Dynamic pattern: an orchestrator pulls in expert agents at runtime as the problem demands.</td></tr>
+<tr><td>Connected agents</td><td>Foundry pattern: main agent + specialized role agents (planner, researcher, reviewer, actuator) with scoped permissions.</td></tr>
+<tr><td>Copilot client plugins</td><td>F&amp;O extensibility: custom actions/knowledge invoked from in-app Copilot chat; backed by X++ methods.</td></tr>
+</table>
+
+<h2>Data &amp; grounding</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>Grounding</td><td>Supplying trusted organizational data at inference so responses are accurate, current, auditable.</td></tr>
+<tr><td>RAG</td><td>Retrieval-Augmented Generation; production pipeline: ingest → clean → chunk → embed → index → retrieve → prompt assembly → monitor.</td></tr>
+<tr><td>Semantic index</td><td>M365's lexical+semantic content map across Graph; continuously updated; honors permissions.</td></tr>
+<tr><td>Copilot Retrieval API</td><td>Retrieves relevant passages from SharePoint/OneDrive/connectors, honoring user permissions.</td></tr>
+<tr><td>Five grounding dimensions</td><td>Accuracy, relevance, timeliness, cleanliness, availability.</td></tr>
+<tr><td>Hybrid search</td><td>Vector + keyword + semantic ranker; the default-preferred retrieval mode for relevance.</td></tr>
+<tr><td>Data pollution</td><td>Duplicates, stray metadata, and noise in grounding content; the cleanliness failure mode; degrades embeddings and retrieval precision.</td></tr>
+<tr><td>Semantic ranker</td><td>Reranking step that re-scores retrieved passages by semantic relevance; the "semantic" leg of hybrid search.</td></tr>
+<tr><td>Top-K</td><td>The fixed number of highest-scoring passages retrieval hands to prompt assembly.</td></tr>
+<tr><td>Permission trimming</td><td>Query-time filtering so retrieval returns only what the calling user may access.</td></tr>
+<tr><td>Red/gold datasets</td><td>Red = mutable experimental data (dev); gold = frozen, promoted, immutable evaluation/production data.</td></tr>
+</table>
+
+<h2>Governance, security, operations</h2>
+<table>
+<tr><th>Term</th><th>Definition</th></tr>
+<tr><td>Responsible AI principles</td><td>Microsoft's six: Fairness, Reliability &amp; Safety, Privacy &amp; Security, Inclusiveness, Transparency, Accountability.</td></tr>
+<tr><td>DLP policy</td><td>Data loss prevention rules restricting connectors/actions/data movement in Power Platform environments.</td></tr>
+<tr><td>Sensitivity label</td><td>Purview classification that travels with content and constrains AI use/transmission.</td></tr>
+<tr><td>Managed identity</td><td>Secret-free Entra identity for agent/model/pipeline authentication; preferred over keys.</td></tr>
+<tr><td>OBO (on-behalf-of)</td><td>Auth pattern where the agent propagates the calling user's permissions; vs. app-identity acting as itself.</td></tr>
+<tr><td>ALM</td><td>Application lifecycle management; for AI: versioned agents, prompts, models, datasets + promotion gates across Dev→Test→Prod.</td></tr>
+<tr><td>GenAIOps</td><td>Deployment automation for generative AI — validations, approvals, environment-specific deploys; the GenAI counterpart to MLOps.</td></tr>
+<tr><td>Managed solution</td><td>Power Platform packaging unit; only managed solutions deploy to Test/Prod.</td></tr>
+<tr><td>Model card</td><td>Documented metrics, constraints, training data refs, and usage boundaries for a model version.</td></tr>
+<tr><td>Model router</td><td>Foundry unified endpoint routing requests across models by task, cost, latency; static/weighted/fallback/version rules.</td></tr>
+<tr><td>Static routing rule</td><td>Model-router rule hard-mapping a request attribute to a model (task = classification → SLM; domain = finance → fine-tuned model).</td></tr>
+<tr><td>Weighted routing rule</td><td>Model-router rule splitting traffic by percentage across models; used for A/B tests and gradual rollouts.</td></tr>
+<tr><td>Fallback routing</td><td>Model-router rule redirecting requests to a backup model when the primary fails or is unavailable.</td></tr>
+<tr><td>Version-based routing</td><td>Model-router rule directing traffic by model version — latest stable for production, experimental for a canary cohort.</td></tr>
+<tr><td>SLM</td><td>Small language model (e.g., Phi); use for high domain specificity, latency/cost constraints, edge — not as an incorrect-information silver bullet.</td></tr>
+<tr><td>HITL</td><td>Human-in-the-loop; approval checkpoints gating high-impact agent actions.</td></tr>
+<tr><td>Model drift / data drift</td><td>Degradation of output quality over time / shift in input data distribution; both monitored against baselines.</td></tr>
+<tr><td>TCO</td><td>Total cost of ownership across five drivers: infrastructure, development/integration, data quality, expertise, operations+licensing.</td></tr>
+<tr><td>Payback period</td><td>Months for net benefit to recover the initial one-time cost: Initial_Cost ÷ Net_Monthly_Benefit.</td></tr>
+<tr><td>ROI sensitivity band</td><td>Optimistic/expected/conservative ROI scenarios varying adoption, minutes saved, and labor rates; own telemetry anchors the band, field research is directional only.</td></tr>
+<tr><td>Savings capability</td><td>Copilot Studio Analytics feature recording savings per run or per tool; admins can disable money-based savings, in which case time is tracked and converted.</td></tr>
+<tr><td>Agent hub</td><td>D365 Contact Center/Customer Service admin hub for adopting and monitoring autonomous agents (Intent, Case Management, Knowledge Management, Quality Evaluation).</td></tr>
+<tr><td>Sidecar</td><td>Copilot chat experience alongside a D365 app (vs. embedded in-page AI vs. outside/external agents).</td></tr>
+<tr><td>CAB</td><td>Change Advisory Board; approval gate for high-risk AI releases.</td></tr>
+<tr><td>Agent readiness criteria</td><td>Plan-phase entry gate for builds: data availability, governance readiness, identity model, connectors.</td></tr>
+<tr><td>Agent governance charter</td><td>Ready-phase foundation artifact: capability access, data boundaries, approvals, monitoring.</td></tr>
+<tr><td>Agent Ops playbook</td><td>Manage-phase operations handbook for production agents: SLOs, retraining rules, deprecation criteria.</td></tr>
+<tr><td>Prompt library</td><td>Curated, governed set of reusable prompts with owner/version/risk metadata; a strategic AI CoE asset.</td></tr>
+<tr><td>Prompt maturity model</td><td>L1 basic → L2 guided → L3 structured → L4 optimized → L5 enterprise governed prompt library.</td></tr>
+</table>
+
+<footer>
+AB-100 study workspace · Reference · Terms added per-lesson; lessons link here.
+</footer>
+
+</body>
+</html>

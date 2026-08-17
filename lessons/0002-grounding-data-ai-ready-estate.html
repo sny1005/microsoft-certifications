@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0002 — Grounding data and the AI-ready estate</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Grounding data &amp; the AI-ready estate</h1>
+<p class="subtitle">Analyze requirements — the data foundation every later design decision rests on</p>
+
+<p>Lesson 2 of your AB-100 course. Lesson 1 picked <em>where</em> the agent lives; this lesson decides <em>what it stands on</em> — because every later choice (knowledge sources, evaluations, governance) assumes the grounding data and the data estate are right.</p>
+
+<div class="recall">
+<span class="boxlabel">Recall from lesson 1</span>
+<p>Don't scroll back. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> Name the five rungs of the agent ladder, in escalation order.</p>
+<details><summary>Reveal</summary>
+<p>Prebuilt SaaS agents → extend Microsoft 365 Copilot → Copilot Studio → Microsoft Foundry (pro-code) → GPUs &amp; containers.</p>
+</details>
+<p><strong>2.</strong> State the SaaS-first principle in one sentence.</p>
+<details><summary>Reveal</summary>
+<p>Always open by asking whether a prebuilt SaaS agent meets the functional requirements — if yes, stop, because custom builds carry governance, evaluation, and ops burden you must justify.</p>
+</details>
+<p><strong>3.</strong> Name the triggers that justify going multi-agent.</p>
+<details><summary>Reveal</summary>
+<p>Crossing security/compliance boundaries, multiple owning teams, or a roadmap spanning 3–5+ functions. Persona switching and better retrieval solve many "multi-agent" needs more cheaply.</p>
+</details>
+</div>
+
+<h2>Warmup: where agents help</h2>
+
+<p>Microsoft frames agent value in three buckets. Keep this light — it's context, not the lesson. [<a href="https://learn.microsoft.com/en-us/training/modules/business-value-microsoft-copilot-solutions/3-explore-copilot-experiences">source</a>]</p>
+
+<table>
+  <tr><th>Bucket</th><th>Examples</th><th>Typical surface</th></tr>
+  <tr><td><strong>Task automation</strong></td><td>Draft emails, Teams summaries, first drafts of docs, process automation, knowledge retrieval</td><td>M365 Copilot, Word/Loop, Copilot Studio, Power Automate</td></tr>
+  <tr><td><strong>Data analytics</strong></td><td>Natural-language questions → insights; trends/outliers; on-demand visualizations; dashboard interpretation</td><td>Copilot analytics experiences</td></tr>
+  <tr><td><strong>Decision-making</strong></td><td>Scenario recommendations, risk identification via patterns, context summaries, knowledge-backed recommendations</td><td>Copilot + org knowledge</td></tr>
+</table>
+
+<p>The best-practice filter for all three: start from a business outcome, automate repetitive work (not critical thinking), apply Responsible AI principles, monitor performance, train the teams. [<a href="https://learn.microsoft.com/en-us/training/modules/business-value-microsoft-copilot-solutions/3-explore-copilot-experiences">source</a>]</p>
+
+<h2>The five grounding dimensions</h2>
+
+<p><strong>Grounding</strong> means the agent responds using trusted, domain-specific organizational data rather than the model's parametric memory. Every AB-100 "the agent gave a bad answer" scenario is, at root, one of five dimensions failing. Learn each as a triple: <em>definition → failure mode → how an architect detects and fixes it</em>. [<a href="https://learn.microsoft.com/en-us/training/modules/build-effective-generative-ai-solutions-organization/3-ground-ai-using-trusted-data">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/agents-copilot-studio-online-workshop/add-knowledge">source</a>]</p>
+
+<table>
+  <tr><th>Dimension</th><th>Definition</th><th>Failure mode</th><th>Architect's detect &amp; fix</th></tr>
+  <tr><td><strong>Accuracy</strong></td><td>Content is correct, verified by SMEs and authoritative sources</td><td>Confident misinformation — the model fills gaps from parametric memory</td><td>SME spot-checks; evaluate content <em>before</em> upload; store authoritative content in SharePoint/OneDrive so there is one source to trust</td></tr>
+  <tr><td><strong>Relevance</strong></td><td>Retrieved content matches the task and the user's intent</td><td>Conceptually-similar-but-wrong retrieval — right topic, wrong product/region/version</td><td>Run the agent's real questions and inspect what comes back; scope knowledge sources; strip off-topic near-neighbors</td></tr>
+  <tr><td><strong>Timeliness</strong></td><td>Content is current; the semantic index continuously updates; refresh schedules are set</td><td>Answers cite superseded versions that still circulate in the estate</td><td>Ask date-sensitive questions; check last-modified on whatever got cited; archive superseded docs; set refresh schedules</td></tr>
+  <tr><td><strong>Cleanliness</strong></td><td>Content is structured, de-duplicated, with minimal noise metadata</td><td><strong>Data pollution</strong> — dupes and noise degrade embeddings and retrieval precision</td><td>Duplicate audits; consistent formatting templates; strip junk metadata before content enters the pipeline</td></tr>
+  <tr><td><strong>Availability</strong></td><td>Content is accessible and indexable — for the user who is asking</td><td><em>Silent</em> omission: the agent answers without the best content and nobody gets an error</td><td>Test retrieval as each user persona (trimming is per-user); review permissions; keep content where the index can reach it</td></tr>
+</table>
+
+<p>Two exam instincts to build here. First, <strong>availability failures are silent</strong> — the agent doesn't error, it just answers from a poorer evidence base, so "it works on my account" proves nothing. Second, the dimensions are a <strong>pre-flight checklist, not a postmortem</strong>: evaluate content before upload, keep authoritative content in SharePoint/OneDrive, enforce consistent formatting, review permissions, collaborate with SMEs — all before the first user prompt. [<a href="https://learn.microsoft.com/en-us/training/modules/build-effective-generative-ai-solutions-organization/3-ground-ai-using-trusted-data">source</a>]</p>
+
+<h2>How M365 grounding actually works</h2>
+
+<p>Copilot and Copilot Studio ground over your tenant using two mechanisms — one built <em>ahead of time</em>, one exercised <em>at query time</em>. The split matters. [<a href="https://learn.microsoft.com/en-us/microsoftsearch/semantic-index-for-copilot">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/api/ai-services/retrieval/copilotroot-retrieval">source</a>]</p>
+
+<p><strong>Ahead of query time — the semantic index.</strong> Organizational content in Microsoft Graph is semantically indexed: a lexical + semantic map across Graph content that is continuously updated and honors permissions. This is why a Copilot answer can reflect a document edited recently without anyone "retraining" anything.</p>
+
+<p><strong>At query time — the Copilot Retrieval API.</strong> When a grounded answer is needed, the Retrieval API pulls relevant passages from SharePoint, OneDrive, and connector sources — and it does so <em>as the calling user</em>. The API never returns content beyond that user's access. Results are permission-trimmed at query time, not at index time.</p>
+
+<p>Three architectural consequences:</p>
+
+<ol>
+  <li><strong>Grounding is per-user.</strong> The same agent, same question, two users → potentially two different evidence sets and two different answers. This is a feature (security), but it breaks naive testing.</li>
+  <li><strong>Over-permissioned content is a grounding bug.</strong> If an intern gets an answer citing a confidential document, the defect is in SharePoint permissions — not in the prompt, the agent, or the model. The fix lives at the permission layer because trimming happens there.</li>
+  <li><strong>You test retrieval as personas, not as admin.</strong> An admin account sees everything; a new hire's account may see nothing. Persona-based retrieval tests are how you detect the silent-omission failure mode from the availability dimension.</li>
+</ol>
+
+<h2>The RAG pipeline, stage by stage</h2>
+
+<p>For custom groundings (Foundry agents, Azure AI Search-backed knowledge), the retrieval-augmented generation pipeline is the canonical flow. You must be able to reproduce this from memory: [<a href="https://learn.microsoft.com/en-us/training/modules/analyze-requirements-ai-powered-business-solutions/">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">source</a>]</p>
+
+<ol>
+  <li><strong>Ingestion</strong> — pull raw content from source systems into the pipeline.</li>
+  <li><strong>Streaming</strong> — keep content flowing incrementally so the index tracks source changes without full re-runs.</li>
+  <li><strong>Cleaning</strong> — strip boilerplate, duplicates, and junk metadata. This is where the cleanliness dimension is won or lost.</li>
+  <li><strong>Chunking</strong> — split documents into passages sized for retrieval.</li>
+  <li><strong>Embedding</strong> — convert each chunk into a vector. Done once, ahead of query time.</li>
+  <li><strong>Indexing</strong> — load vectors and text into the search index.</li>
+  <li><strong>Retrieval</strong> — given a user turn, fetch the top-K candidate passages. Default-preferred mode is hybrid: vector + keyword + semantic ranker.</li>
+  <li><strong>Prompt assembly</strong> — compose instructions + retrieved passages + the user question into the model call.</li>
+  <li><strong>Orchestration</strong> — the agent's control flow: when to retrieve, rewrite a query and retry, call a tool, or abstain.</li>
+  <li><strong>Monitoring</strong> — track retrieval quality and grounding failures; feed findings back into earlier stages.</li>
+</ol>
+
+<p><strong>Why externalize to an index instead of querying live systems per turn?</strong> Follow the arrows: embedding (5) and indexing (6) happen <em>before</em> anyone asks anything. Retrieval quality depends on that precomputed work — you cannot embed the corpus at query time. And per-turn live queries would pile unpredictable read load onto transactional systems. So grounding runs against an externalized index that stays fresh through streaming ingestion. RAG's stated advantages — real-time data access, privacy preservation, misinformation mitigation — all follow from this arrangement: fresh indexed content (not a stale model), data stays in your boundary (not sent for training), and trusted content constrains the answer. [<a href="https://learn.microsoft.com/en-us/training/modules/analyze-requirements-ai-powered-business-solutions/">source</a>]</p>
+
+<p><strong>Why hybrid beats pure vector.</strong> Vector similarity is excellent at intent ("how do I return a damaged order") and notoriously soft on exact tokens — part numbers, error codes, proper nouns blur into their nearest neighbors. Keyword retrieval nails exact tokens but misses paraphrase. Hybrid runs both and lets the semantic ranker re-score the merged candidates by relevance. That is why hybrid (vector + keyword + semantic ranker) is the default-preferred retrieval mode, and why "our vector search misses part numbers" is a retrieval-mode bug, not an embedding-model bug.</p>
+
+<h2>The AI-ready Azure data estate</h2>
+
+<p>Microsoft's reference architecture layers the estate from transactions up to agents: [<a href="https://learn.microsoft.com/en-us/training/modules/leverage-ai-tools/6-drive-transformation-azure-platforms">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">source</a>]</p>
+
+<table>
+  <tr><th>Layer</th><th>What lives there</th><th>Examples</th></tr>
+  <tr><td><strong>Operational databases</strong></td><td>Transactional, low-latency application data</td><td>Azure Cosmos DB, Azure SQL, Azure Database for PostgreSQL</td></tr>
+  <tr><td><strong>Analytical stores</strong></td><td>Consolidated history for reporting and ML</td><td>Microsoft Fabric Lakehouse / Warehouse</td></tr>
+  <tr><td><strong>Intelligence layer</strong></td><td>Embeddings, vector search, semantic ranking, retrieval</td><td>Azure AI Search</td></tr>
+  <tr><td><strong>AI apps &amp; agents</strong></td><td>The consumers of everything below</td><td>Copilot Studio agents, Foundry agents</td></tr>
+</table>
+
+<p>Which database fits which need — the exam loves this mapping: [<a href="https://learn.microsoft.com/en-us/training/modules/leverage-ai-tools/6-drive-transformation-azure-platforms">source</a>]</p>
+
+<table>
+  <tr><th>Need</th><th>Pick</th><th>Why</th></tr>
+  <tr><td>Relational app data with vector and semantic search plus JSON</td><td><strong>Azure SQL</strong></td><td>Vector data support, semantic search, JSON</td></tr>
+  <tr><td>Low-latency operational data with vector similarity next to the documents</td><td><strong>Azure Cosmos DB</strong></td><td>Low latency, native vector search</td></tr>
+  <tr><td>Open-source relational with in-database ML and embeddings</td><td><strong>Azure Database for PostgreSQL</strong></td><td>ML extensions, embeddings</td></tr>
+  <tr><td>One analytics platform across the whole estate</td><td><strong>Microsoft Fabric</strong></td><td>Unified analytics (Lakehouse/Warehouse)</td></tr>
+</table>
+
+<p>The judgment pattern: <strong>operational questions pick an operational database, analytical questions pick Fabric, and agent-facing retrieval goes through the intelligence layer</strong> — you don't point an agent at a transactional store and hope.</p>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory, list the ten RAG pipeline stages in order — ingestion through monitoring. Then scroll up and check. If you missed one, note which; it tells you which stage's <em>purpose</em> you haven't yet attached to the sequence.
+</div>
+
+<h2>Organizing data for AI readiness</h2>
+
+<p>The Cloud Adoption Framework's data architecture for AI agents reduces to six moves. Do them in roughly this order, and do governance earlier than feels necessary: [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">source</a>]</p>
+
+<ol>
+  <li><strong>Centralize knowledge sources.</strong> Authoritative content lives in known homes: SharePoint, OneDrive, Dataverse, Azure Storage. Scattered copies are future data pollution.</li>
+  <li><strong>Normalize and structure.</strong> Consistent formats and clean metadata, so embeddings and retrieval aren't fighting noise.</li>
+  <li><strong>Build semantic indexing.</strong> Make content retrievable by meaning, not by folder path.</li>
+  <li><strong>Provide multiple access paths.</strong> APIs, search indexes, RAG pipelines, Graph connectors, SQL endpoints — and choose per consumer. Stable documents belong in an index; volatile per-record facts belong behind an API or connector the agent calls at runtime.</li>
+  <li><strong>Governance early.</strong> Purview access policies, sensitivity labels, lineage, and quality rules — applied to the data <em>before</em> ingestion, not retrofitted after a security review finds the agent reading labeled content it shouldn't.</li>
+  <li><strong>Keep it authoritative and updated.</strong> One source of truth per domain, with refresh discipline — the timeliness dimension, operationalized.</li>
+</ol>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">1. A benefits agent keeps citing the 2024 expense policy even though the 2025 version was published to the same SharePoint library months ago. Both documents are retrievable. Which grounding dimension should you fix first?</p>
+  <button class="opt" data-key="a">Accuracy</button>
+  <button class="opt" data-key="b">Relevance</button>
+  <button class="opt" data-key="c">Timeliness</button>
+  <button class="opt" data-key="d">Availability</button>
+  <p class="why">Both versions are indexed and retrievable, so availability is fine — and each document was accurate when written. The defect is freshness discipline: a superseded version still circulates. Archive or demote the old document and set refresh schedules so current content wins retrieval.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">2. Two sales reps ask the same agent for the enterprise discount policy. One gets a precise, cited answer; the other is told no such policy exists. The document sits in one indexed SharePoint library. Most likely cause?</p>
+  <button class="opt" data-key="a">The index has not finished crawling that library</button>
+  <button class="opt" data-key="b">The document failed the pipeline's embedding stage</button>
+  <button class="opt" data-key="c">The chunking stage split the relevant passage</button>
+  <button class="opt" data-key="d">The second rep lacks permission to the document</button>
+  <p class="why">Retrieval is permission-trimmed per user at query time — the Retrieval API never returns content the caller can't access. Same agent, same index, different user means check permissions, not the pipeline. The failure is silent by design, which is why you test retrieval as personas.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">3. A proposal agent drafts answers that blend fragments of three near-identical copies of the same case study, saved by different teams in different libraries. Which grounding dimension is failing?</p>
+  <button class="opt" data-key="a">Cleanliness</button>
+  <button class="opt" data-key="b">Relevance</button>
+  <button class="opt" data-key="c">Timeliness</button>
+  <button class="opt" data-key="d">Availability</button>
+  <p class="why">Duplicate content is data pollution — the cleanliness dimension. Duplicates split retrieval scores and degrade embedding precision, so the model receives three partial copies instead of one authoritative passage. Dedupe to a single authoritative copy before tuning anything else.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">4. A customer-facing shopping agent needs product lookups at very low latency across regions, with vector similarity over embeddings stored next to the product documents. Which operational database fits?</p>
+  <button class="opt" data-key="a">Azure SQL Database with vector search support</button>
+  <button class="opt" data-key="b">Azure Cosmos DB with native vector search</button>
+  <button class="opt" data-key="c">Azure Database for PostgreSQL with ML extensions</button>
+  <button class="opt" data-key="d">Microsoft Fabric with its unified analytics</button>
+  <p class="why">Cosmos DB is the low-latency operational store with native vector search — embeddings colocated with the documents it serves. Azure SQL and PostgreSQL are strong relational fits, and Fabric is the analytical layer, not an operational store you point a live customer agent at.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">5. Testing shows the agent answers even when retrieval returns nothing useful. You want it to rewrite the query, retry once, then abstain. Which RAG pipeline stage owns that change?</p>
+  <button class="opt" data-key="a">Ingestion</button>
+  <button class="opt" data-key="b">Orchestration</button>
+  <button class="opt" data-key="c">Retrieval</button>
+  <button class="opt" data-key="d">Monitoring</button>
+  <p class="why">Flow control — deciding when to retrieve, rewrite and retry, or abstain — is orchestration. Retrieval fetches candidates; orchestration decides what to do with the result. Monitoring would only tell you it happened; ingestion can't help at query time.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">6. Field engineers search by exact part numbers like "XJ-4402" and the vector-only index keeps missing them, returning conceptually similar parts instead. Best fix?</p>
+  <button class="opt" data-key="a">Re-embed the catalog with a larger embedding model</button>
+  <button class="opt" data-key="b">Increase the chunk size so numbers keep context</button>
+  <button class="opt" data-key="c">Query the operational database live per user turn</button>
+  <button class="opt" data-key="d">Switch to hybrid: vector plus keyword plus semantic ranker</button>
+  <p class="why">Exact tokens are keyword's strength; vector similarity blurs identifiers into neighbors, and a bigger embedding model won't change that. Hybrid with the semantic ranker is the default-preferred retrieval mode — it keeps semantic recall and restores exact-match precision.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">7. In a design review, an engineer proposes skipping the search index and having the agent query the ERP's live database on every turn instead. Strongest architectural objection?</p>
+  <button class="opt" data-key="a">Embeddings are precomputed and indexed, not built per query</button>
+  <button class="opt" data-key="b">Operational databases are not able to store vector data</button>
+  <button class="opt" data-key="c">Live database queries would always violate Purview access policies</button>
+  <button class="opt" data-key="d">Semantic rankers only operate on SharePoint site content</button>
+  <p class="why">The embedding and indexing stages run before query time — that precomputed work is exactly why grounding hits an externalized index. Per-turn live queries can't reuse it and pile read load onto a transactional system. The other options are simply false: operational databases do store vectors, authorized queries are legitimate, and the ranker runs in Azure AI Search.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">8. A month before launch, security review finds the agent retrieving documents whose sensitivity labels prohibit that use. The labels existed all along. Where was the cheapest point to catch this?</p>
+  <button class="opt" data-key="a">During prompt assembly, as an extra instruction</button>
+  <button class="opt" data-key="b">At deployment time, as a runtime content filter</button>
+  <button class="opt" data-key="c">During data organization, before ingestion begins</button>
+  <button class="opt" data-key="d">After monitoring flags the first violations</button>
+  <p class="why">Governance early: Purview access policies, sensitivity labels, and lineage belong in the data-organization phase — before content is ingested and indexed. Prompt instructions and runtime filters are retrofits that cost more, leak more, and put the fix in the wrong layer.</p>
+</div>
+
+<h2>Apply it: Northwind Traders, three data problems</h2>
+
+<p>Northwind Traders (retail, 8,000 employees, M365 + Azure estate) brings you three grounding problems. Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> Their support agent is grounded on a SharePoint knowledge library. Senior techs report excellent answers; new hires report thin, generic ones. This week, an intern received an answer quoting a confidential field-engineering bulletin. Two symptoms — one root cause area?</p>
+<details><summary>Your call?</summary>
+<p><strong>Yes: permissions.</strong> Retrieval is trimmed per user at query time, so new hires silently omit content their roles can't reach (availability failure), and the intern saw content they <em>shouldn't</em> reach (over-permissioned source). Neither fix lives in the prompt: correct the SharePoint permission model, apply sensitivity labels, then re-test retrieval as each persona. [<a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/api/ai-services/retrieval/copilotroot-retrieval">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> Northwind's order system runs on Cosmos DB across regions; ten years of sales history sits in an aging SQL Server warehouse; the board wants the estate "AI-ready." Place the pieces.</p>
+<details><summary>Your call?</summary>
+<p><strong>Layer it, don't consolidate blindly.</strong> Keep Cosmos DB as the operational store — low latency with native vector search covers product-similarity features in the shopping app. Land the sales history in Microsoft Fabric as the analytical store for unified reporting. Put Azure AI Search in the intelligence layer, indexing the curated product and policy content agents will retrieve. Agents (Copilot Studio or Foundry) consume the intelligence layer and sanctioned APIs — never the transactional store directly. [<a href="https://learn.microsoft.com/en-us/training/modules/leverage-ai-tools/6-drive-transformation-azure-platforms">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> The agent roadmap has two flagship questions: "how do I assemble product Y?" and "what's the current status of order X?" Same retrieval design for both?</p>
+<details><summary>Your call?</summary>
+<p><strong>No — match the access path to data volatility.</strong> Assembly instructions are stable documents: index them and serve via RAG (that's the pipeline's job). Order status is a volatile, per-record fact: by the time an index refresh lands, it's stale, so expose it through an API or connector action the agent calls at runtime. CAF's "multiple access paths" guidance exists precisely for this split — APIs, search indexes, RAG, Graph connectors, SQL endpoints are complements, not competitors. [<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+Everything above transfers directly to AI-103 domain 5, "Build retrieval and grounding pipelines" — ingest and index content, configure semantic/hybrid/vector search for grounding, configure the RAG ingestion flow including OCR — plus domain 1's "choose an appropriate method for retrieval and indexing." What's <strong>same</strong>: the ten-stage pipeline, the externalized-index reasoning, and the hybrid default (vector + keyword + semantic ranker) are identical. What's <strong>different</strong> is posture: AI-103 expects you to <em>implement</em> — picking index configurations in Azure AI Search, wiring ingestion and enrichment inside Foundry, choosing vector vs hybrid per workload — while AB-100 expects you to <em>judge</em> whether the estate is ready to be grounded at all. Expect lab-style questions there, architecture-board questions here. Bank the concepts now; the hands-on reps come after AB-100.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now audit any data estate against the five grounding dimensions, place its workloads on the right Azure data layer, and reproduce the RAG pipeline from memory — the foundation every later architecture decision stands on.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/data-architecture-plan">CAF: Data architecture for AI agents</a> (15 min) — the canonical layering, access-path, and governance checklist this lesson compresses.
+</div>
+
+<div class="teacher">
+Which section strained credulity — the permission-trimming mechanics, the hybrid-retrieval argument, the layer mapping? Ask me to defend it or go deeper. Your pushback decides what lesson 0003 (AI strategy) spends its time on.
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0002 · Prev: <a href="../lessons/0001-extend-configure-or-build.html">lesson 0001</a> · Glossary: <a href="../reference/glossary.html">data &amp; grounding terms</a> · Next: <a href="../lessons/0003-ai-strategy-caf-lifecycle-coe.html">lesson 0003 AI strategy</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0001 — Extend, configure, or build: choosing the agent platform</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Extend, configure, or build</h1>
+<p class="subtitle">Choosing the agent platform — the decision AB-100 tests most</p>
+
+<p>AB-100 is not a product-trivia exam. Most scenario questions reduce to one judgment: <em>given this business need, which rung of the agent ladder do you stop at?</em> Microsoft's own guidance is explicit about the order: start with a <strong>SaaS (prebuilt) agent</strong>, escalate to <strong>extending Microsoft 365 Copilot</strong>, then <strong>Copilot Studio</strong>, then <strong>code-first in Microsoft Foundry</strong> — and only touch <strong>GPUs/containers</strong> when nothing higher holds. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/3-design-strategy-building-ai-agents-business-solutions">source</a>, <a href="https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ai-agents/technology-solutions-plan-strategy">CAF technology plan</a>]</p>
+
+<h2>The ladder</h2>
+
+<table>
+  <tr><th>Rung</th><th>Approach</th><th>Best for</th><th>You give up</th></tr>
+  <tr><td><strong>Prebuilt SaaS agents</strong><br>(D365 Copilots, Copilot for Sales/Service, M365 prebuilt agents)</td><td>Ready-to-use SaaS</td><td>Personal productivity &amp; standard processes; immediate value, minimal customization</td><td>Almost all control</td></tr>
+  <tr><td><strong>Extend Microsoft 365 Copilot</strong><br>(declarative agents, connectors, Agent Builder)</td><td>SaaS extensibility</td><td>Work happening inside Word/Outlook/Teams; org knowledge + simple actions; inherits built-in RAI guardrails</td><td>Autonomy, complex logic, data outside M365</td></tr>
+  <tr><td><strong>Copilot Studio</strong><br>(low-code custom agents)</td><td>Low-code SaaS</td><td>Business-maintained agents; task/retrieval/autonomous agents; fast iteration; governed SaaS boundary; multi-channel publishing</td><td>Deep orchestration, custom models, full eval control</td></tr>
+  <tr><td><strong>Microsoft Foundry</strong><br>(pro-code agents)</td><td>PaaS</td><td>Complex/multi-agent orchestration, custom tools &amp; logic, enterprise integration at scale, custom models</td><td>Simplicity; you own governance, evals, ops</td></tr>
+  <tr><td><strong>GPUs &amp; containers</strong></td><td>IaaS</td><td>Strict compliance/isolation, BYO model hosting, full stack control</td><td>Everything managed</td></tr>
+</table>
+
+<h2>The decision rules that matter</h2>
+
+<p><strong>1. SaaS-first principle.</strong> Always open with: <em>does a prebuilt agent meet the functional requirements?</em> If yes — stop. Custom builds carry governance, evaluation, and ops burden you must justify. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/8-determine-build-custom-agents-extend-copilot">source</a>]</p>
+
+<p><strong>2. Extend M365 Copilot when:</strong> the interaction lives in M365 apps, the data lives in M365 (Graph, semantic index), productivity is the goal, and actions stay simple. Built-in compliance and Responsible AI come free.</p>
+
+<p><strong>3. Build in Copilot Studio when:</strong> you need a purpose-built agent (business process automation, publishing to Teams/web/D365 channels, autonomous triggers, agent flows) but still want a governed, low-code, fast loop that business users can co-own. Constraints: connector-scoped data, platform-enforced guardrails, medium risk tier. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/6-define-solution-rules-constraints-building-ai-components">source</a>]</p>
+
+<p><strong>4. Go Foundry when:</strong> multi-agent orchestration, custom reasoning, proprietary models, deep system integration, or explicit evaluation pipelines are required. You gain control; you inherit governance, monitoring, failover, and cost. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/4-design-multi-agent-solution">source</a>]</p>
+
+<p><strong>5. Single agent before multi-agent.</strong> Go multi-agent only when you cross security/compliance boundaries, have multiple owning teams, or a roadmap spanning 3–5+ functions. Persona switching and better retrieval solve many "multi-agent" needs more cheaply.</p>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close this tab's scroll position in your mind. From memory: name the five rungs in order, and state the SaaS-first principle in one sentence. Then check yourself against the table above.
+</div>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">1. A sales org wants CRM-grounded assistance inside Outlook and Teams — meeting prep, email summaries, opportunity updates — with zero custom development. Best fit?</p>
+  <button class="opt" data-key="a">Build a custom Copilot Studio agent</button>
+  <button class="opt" data-key="b">Deploy Microsoft 365 Copilot for Sales</button>
+  <button class="opt" data-key="c">Create a custom code-first Foundry agent</button>
+  <button class="opt" data-key="d">Extend Copilot with a Graph connector</button>
+  <p class="why">Prebuilt SaaS agent meets the requirement exactly — SaaS-first principle. Copilot for Sales is purpose-built for sellers in Outlook/Teams with CRM grounding. Anything custom is unjustified cost and governance burden.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">2. HR wants a self-service policy Q&amp;A agent grounded in SharePoint, published to Teams, and maintained by business users — not developers.</p>
+  <button class="opt" data-key="a">Fine-tune a custom model in Foundry</button>
+  <button class="opt" data-key="b">Build a declarative Copilot Studio agent</button>
+  <button class="opt" data-key="c">Deploy Microsoft 365 Copilot for Service</button>
+  <button class="opt" data-key="d">Configure prebuilt Dynamics 365 Customer Service agent</button>
+  <p class="why">A purpose-built retrieval agent maintained by non-developers is Copilot Studio's sweet spot: SharePoint knowledge sources, Teams channel, governed SaaS. No custom model is needed — general summarization/Q&amp;A over knowledge is what catalog models already do well.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">3. A firm needs a bespoke multi-agent system: custom orchestration across proprietary tools, strict evaluation gates, and agents that cross a compliance boundary between two departments.</p>
+  <button class="opt" data-key="a">Extend Copilot Studio with MCP actions</button>
+  <button class="opt" data-key="b">Configure prebuilt agents in Dynamics 365</button>
+  <button class="opt" data-key="c">Build connected agents in Microsoft Foundry</button>
+  <button class="opt" data-key="d">Add knowledge sources to Copilot Studio</button>
+  <p class="why">Crossing a compliance boundary is an explicit trigger for multi-agent design, and custom orchestration + evaluation pipelines are Foundry's remit. MCP extends tool reach but doesn't give you pro-code orchestration and custom evals.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">4. Knowledge workers want help drafting and summarizing inside Word and Teams. Data lives entirely in SharePoint and email. Minimal engineering investment is a hard constraint.</p>
+  <button class="opt" data-key="a">Build a custom code-first Foundry agent</button>
+  <button class="opt" data-key="b">Create an autonomous Copilot Studio agent</button>
+  <button class="opt" data-key="c">Extend Microsoft 365 Copilot with connectors</button>
+  <button class="opt" data-key="d">Fine-tune a custom small language model</button>
+  <p class="why">Interaction in M365 apps + data in M365 + productivity goal + simple actions = extend Copilot. You inherit Microsoft's Responsible AI guardrails and skip custom governance entirely.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">5. An architect kicks off design for a new agentic business process. Per Microsoft's technology planning guidance, what is the <em>first</em> question to answer?</p>
+  <button class="opt" data-key="a">Whether a SaaS agent meets requirements</button>
+  <button class="opt" data-key="b">Whether Copilot Studio supports MCP connectors</button>
+  <button class="opt" data-key="c">Whether Foundry supports private model hosting</button>
+  <button class="opt" data-key="d">Whether the team knows pro-code development</button>
+  <p class="why">The CAF agent technology plan is a decision tree whose root is SaaS-fit. Platform capabilities and team skills only matter after a prebuilt agent has been ruled out.</p>
+</div>
+
+<h2>Apply it: Fabrikam, three needs</h2>
+
+<p>Fabrikam (manufacturing, 5,000 employees, D365 + M365 estate) asks you to place three initiatives on the ladder. Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> Contact-center reps need case summaries, conversation recaps, and next-step suggestions inside the Dynamics 365 Customer Service workspace.</p>
+<details><summary>Your call?</summary>
+<p><strong>Configure prebuilt Copilot in Dynamics 365 Customer Service.</strong> Every capability named is out-of-box: case/conversation summaries, suggested actions, knowledge retrieval. The design work is business terms, field mapping, and summary format — configuration, not construction. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> Field ops wants an agent that fires when a Dataverse row is created, runs a multi-step approval workflow, posts to Teams, and is maintained by the ops team itself.</p>
+<details><summary>Your call?</summary>
+<p><strong>Copilot Studio autonomous agent.</strong> Event triggers, agent flows, Teams publishing, business-owned maintenance — all native to Copilot Studio. Not M365-extensible (event-driven autonomy), not Foundry (no custom orchestration or models). [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/8-design-autonomous-agents">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> R&amp;D wants a multi-agent research system over proprietary formulations data, with custom fine-tuned models, private networking, and an explicit evaluation pipeline with release gates.</p>
+<details><summary>Your call?</summary>
+<p><strong>Microsoft Foundry</strong> — and if full isolation/BYO hosting is non-negotiable, GPUs &amp; containers. Custom models, deep orchestration, and owned eval pipelines are exactly what you trade speed for at the bottom of the ladder. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/2-design-ai-solutions-custom-models-microsoft-foundry">source</a>]</p>
+</details>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now place any agentic requirement on the five-rung ladder and defend the choice — the single highest-frequency decision pattern in AB-100's Plan and Design domains.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/8-determine-build-custom-agents-extend-copilot">Determine when to build custom agents or extend Microsoft 365 Copilot</a> (10 min) — the unit this lesson compresses, with the full capability comparison matrix.
+</div>
+
+<div class="teacher">
+Anything unclear — a quiz answer you disagree with, a rung boundary that feels fuzzy? Ask me. That's what I'm here for, and your pushback is what the next lesson gets built on.
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0001 · Glossary: <a href="../reference/glossary.html">agentic platform terms</a> · Next: <a href="../lessons/0002-grounding-data-ai-ready-estate.html">lesson 0002 grounding data</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

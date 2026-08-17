@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0005 — Copilot Studio internals: orchestration, knowledge &amp; topics</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Copilot Studio internals</h1>
+<p class="subtitle">Orchestration, knowledge, topics, and flows — the platform the Design domain revolves around</p>
+
+<p>Lesson 5 of your AB-100 course, and the first of the Design domain. Lessons 1–4 were Plan: pick the rung, prove the estate, staff the operating model, defend the numbers. Now the exam zooms into the rung you know least — Copilot Studio — and expects you to reason about its <em>internals</em>: which orchestration mode, which knowledge source, which topic type, which automation tool. You know Foundry cold, so this lesson teaches Copilot Studio by analogy wherever one holds: same concepts, SaaS constraints, different vocabulary. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall so far</span>
+<p>Don't scroll back to earlier lessons. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> (Lesson 1) When is Copilot Studio the right rung of the ladder — and what constraints come with it?</p>
+<details><summary>Reveal</summary>
+<p>When you need a purpose-built agent — business process automation, publishing to Teams/web/D365 channels, autonomous triggers, agent flows — but still want a governed, low-code, fast loop that business users can co-own. Constraints: connector-scoped data, platform-enforced guardrails, medium risk tier.</p>
+</details>
+<p><strong>2.</strong> (Lesson 2) Two reps ask the same agent the same question. One gets a precise, cited answer; the other is told no such content exists. Which grounding dimension failed, and why is it silent?</p>
+<details><summary>Reveal</summary>
+<p><strong>Availability.</strong> Retrieval is permission-trimmed per user at query time, so the second rep's agent answers from a poorer evidence base and nobody gets an error. The fix lives at the permission layer, and you detect it by testing retrieval as personas, not as admin.</p>
+</details>
+<p><strong>3.</strong> (Lesson 4) Write the ROI% formula, and state exactly where the adoption factor enters the annual-benefit arithmetic.</p>
+<details><summary>Reveal</summary>
+<p><code>ROI% = (Net_Benefit / Annual_TCO) × 100</code>, where <code>Net_Benefit = Annual_Benefit − Annual_TCO</code>. Adoption multiplies the <em>volume</em> term (runs per year), not the minutes saved — skip it and you overstate the benefit.</p>
+</details>
+</div>
+
+<h2>Agent anatomy: the six components</h2>
+
+<p>Every Copilot Studio agent — task, autonomous, or prompt-driven — is assembled from the same six components. Learn each as <em>what it is → a concrete example</em>; the exam describes a requirement and asks which component owns it. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/7-design-task-agents-in-copilot-studio">source</a>]</p>
+
+<table>
+  <tr><th>Component</th><th>What it is</th><th>Concrete example</th></tr>
+  <tr><td><strong>Goals</strong></td><td>The agent's mission — outcome-based, actionable, observable, testable</td><td>"Resolve order-status questions without a human"</td></tr>
+  <tr><td><strong>Skills</strong></td><td>Language understanding, data interpretation, planning, execution</td><td>Parse a refund request; plan the lookup steps</td></tr>
+  <tr><td><strong>Actions</strong></td><td>Connectors, custom connectors, APIs, Dataverse operations, cloud flows — each needs input parameters, an output schema, auth, and error handling</td><td>A <code>GetOrderStatus</code> connector; a CreateCase Dataverse action</td></tr>
+  <tr><td><strong>Knowledge</strong></td><td>SharePoint, manuals, SOPs, Dataverse, knowledge bases — must be accurate, recent, governed, indexed</td><td>The returns-policy SharePoint site plus product-manual PDFs</td></tr>
+  <tr><td><strong>Context</strong></td><td>The conversation state the agent carries through the dialog</td><td>The order number captured two turns ago, reused by the next action</td></tr>
+  <tr><td><strong>Safety &amp; Rules</strong></td><td>Hard behavioral constraints the agent must never cross</td><td>"Never override credit limit"; "ask before submitting order"; "escalate on complaint keywords"</td></tr>
+</table>
+
+<p>The Foundry analogy: actions are tool schemas (inputs, outputs, auth, error handling) wearing a low-code wrapper, and Safety &amp; Rules are system-message guardrails the <em>platform</em> enforces rather than the prompt politely requesting. Design best practices: start with one high-value workflow; keep goals small and focused; ground on clean structured data; scope actions least-privilege; add monitoring and logging; test edge cases. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/7-design-task-agents-in-copilot-studio">source</a>]</p>
+
+<h2>The three agent types — and when each</h2>
+
+<table>
+  <tr><th>Type</th><th>Starts when</th><th>Built from</th><th>Choose when</th></tr>
+  <tr><td><strong>Task agent</strong></td><td>The user asks</td><td>The six anatomy components; topic-driven dialogs with question nodes and actions</td><td>Guided, user-initiated workflows with structured steps — reset MFA, create a ticket, check an order</td></tr>
+  <tr><td><strong>Autonomous agent</strong></td><td>An event fires: user input, <strong>system changes</strong>, or <strong>schedules</strong></td><td>Goals, triggers, instructions (business rules such as VIP escalation), knowledge sources, actions (APIs, records, emails, CRM updates)</td><td>Work that should start itself — a Dataverse row is created, a schedule fires — without waiting for a prompt</td></tr>
+  <tr><td><strong>Prompt-driven agent</strong></td><td>The user asks, but no authored topic is needed</td><td>Generative mechanisms: the Generative Answers node, system topics, condition nodes, event triggers</td><td>Open-ended Q&amp;A over knowledge, where answers are generated from sources rather than authored as topics</td></tr>
+</table>
+
+<p>Three details carry exam weight. First, the prompt-driven agent's toolbox: the <strong>Generative Answers (NLU Boost) node</strong> answers from knowledge when no topic matches — usable as fallback — and its responses can be stored in variables, rendered in Adaptive Cards, and custom-formatted; <strong>condition nodes</strong> branch on variables with AND/OR and if/elseif/else logic, with Power Fx formulas for advanced cases; <strong>system topics</strong> trigger automatically. Second, <strong>event triggers</strong>: they act without a user prompt (file uploaded, task completed, Dataverse row added, schedule), their <strong>payloads carry data, instructions, and context</strong>, they <strong>must be explicitly authorized</strong>, and they <strong>impact billing</strong> — an unauthorized or unbudgeted trigger is a governance defect, not a convenience. Third, the autonomous-agent build loop: identify a simple high-value use case → build (goal, instructions, knowledge, triggers, actions via Power Automate/connectors/Dataverse) → test accuracy, grounding, and action execution repeatedly → deploy to Teams → monitor and refine. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/8-design-autonomous-agents">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/9-design-prompt-driven-agents">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-triggers-about">event triggers</a>]</p>
+
+<h2>Classic vs generative orchestration — the exam's favorite fork</h2>
+
+<p>Orchestration is the agent's control flow: given a user turn, decide what runs. Copilot Studio offers two modes, and the Design domain tests the difference relentlessly. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/7-determine-generative-ai-knowledge-sources-for-copilot-studio-agents">source</a>]</p>
+
+<table>
+  <tr><th>Dimension</th><th>Classic orchestration</th><th>Generative orchestration</th></tr>
+  <tr><td>How a topic is selected</td><td>Trigger-phrase match</td><td>Topics, agents, and tools selected <em>by their descriptions</em></td></tr>
+  <tr><td>Where tools can run</td><td>Only from within a topic</td><td>Wherever the plan calls for them</td></tr>
+  <tr><td>Position of knowledge</td><td>Searched only as a fallback</td><td>Proactive knowledge search, first-class in the plan</td></tr>
+  <tr><td>Scope per turn</td><td>A single topic runs</td><td>Combines topics + tools + knowledge in one turn</td></tr>
+  <tr><td>Missing inputs</td><td>You author question nodes for every slot</td><td>Auto-generates questions for missing inputs</td></tr>
+  <tr><td>Responses</td><td>You author message nodes</td><td>Auto-generates responses</td></tr>
+</table>
+
+<p>Two generative-mode facts to memorize. Enabling generative orchestration <strong>auto-creates the "Conversational boosting" system topic</strong> — the mechanism that serves dynamic answers from knowledge when no topic matches. And generative answers search <strong>up to 25 knowledge sources</strong> with <strong>GPT-based relevance filtering</strong>; you can optionally enable <strong>general knowledge</strong> so the agent can answer out-of-domain questions from the model's own knowledge — a choice you should make deliberately, not by default. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/7-determine-generative-ai-knowledge-sources-for-copilot-studio-agents">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/advanced-generative-actions">source</a>]</p>
+
+<p><strong>The Foundry analogy that makes this stick.</strong> Classic orchestration is an explicit intent router: trigger phrases are the route table, each topic is a request handler, and nothing executes unless a route matches. Generative orchestration is Foundry Agent Service's automatic tool calling: you describe the topics, tools, and knowledge, and the model plans which to invoke — filling missing parameters by asking the user, exactly as function calling asks for missing arguments. If you would solve it with an explicit dispatcher in code, that's classic; if you would hand the model a tool list and let it plan, that's generative. The judgment the exam wants: unpredictable, free-form requests that blend answers with actions → generative; a fixed set of commands where routing must be exact and auditable → classic discipline (see the NLU section below).</p>
+
+<h2>Knowledge architecture</h2>
+
+<p>Knowledge is where Copilot Studio agents get their grounding — and where the Design domain plants its limits-and-tradeoffs questions. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-copilot-studio">source</a>]</p>
+
+<h3>Where knowledge attaches — three levels</h3>
+
+<p>Knowledge can be applied at the <strong>agent level</strong> (available everywhere), at the <strong>topic level</strong> (scoped to one conversation flow), or on a <strong>generative answers node</strong> (scoped to that exact step). The priority rule: <strong>node-level sources are prioritized over agent-level sources</strong>. That is how you stop a general-purpose agent from answering a specialized flow's questions from the wrong corpus — override at the node, don't restructure the agent. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/7-determine-generative-ai-knowledge-sources-for-copilot-studio-agents">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/nlu-generative-answers-azure-openai">source</a>]</p>
+
+<h3>Source types</h3>
+
+<table>
+  <tr><th>Source</th><th>Kind</th><th>Notes</th></tr>
+  <tr><td><strong>Public websites</strong></td><td>Unstructured</td><td>Public pages only — no auth, no private content</td></tr>
+  <tr><td><strong>Uploaded documents</strong></td><td>Unstructured</td><td>PDF/Word/PPTX indexed into Dataverse</td></tr>
+  <tr><td><strong>SharePoint</strong></td><td>Unstructured</td><td>Permission-trimmed per user at query time</td></tr>
+  <tr><td><strong>Dataverse</strong></td><td>Structured</td><td>Tables and rows — records, not documents</td></tr>
+  <tr><td><strong>Enterprise connectors via Microsoft Search</strong></td><td>Varies</td><td>OneDrive, Salesforce, ServiceNow, and more</td></tr>
+  <tr><td><strong>Azure OpenAI "on your data"</strong></td><td>Your own index</td><td>Bring an existing retrieval index to the generative answers node</td></tr>
+</table>
+
+<h3>How unstructured data is processed</h3>
+
+<p>This is lesson 2's RAG pipeline delivered as SaaS. Unstructured content is <strong>ingested into Dataverse, chunked, and vectorized</strong>; a <strong>background sync</strong> keeps it fresh; and at query time, retrieval runs <strong>per-user permission checks</strong> before anything reaches the model. Every consequence from lesson 2 follows: grounding is per-user, over-permissioned content is a grounding bug fixed at the permission layer, and availability failures are silent — you test as personas. The difference from Foundry RAG is that Dataverse is the index substrate and the platform owns the pipeline; you trade control for zero ops. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-unstructured-data">source</a>]</p>
+
+<h3>The two hard limits — memorize both numbers</h3>
+
+<ol>
+  <li><strong>500 knowledge objects per agent.</strong> The total ceiling on knowledge items attached to one agent.</li>
+  <li><strong>Max 5 unstructured sources in simultaneous retrieval.</strong> Attach eight SharePoint sites and uploaded manuals if you like — any single retrieval searches at most five of them. The design consequence: consolidate unstructured content into fewer, well-curated sources, or front a large corpus with Azure AI Search instead of attaching it piecemeal.</li>
+</ol>
+
+<h3>Azure AI Search as a knowledge source</h3>
+
+<p>For volume and relevance beyond what the built-in pipeline offers, point the agent at <strong>Azure AI Search</strong>: vector indexes with <strong>semantic ranking</strong>, authenticated by <strong>key, certificate, or Microsoft Entra ID</strong>, with <strong>metadata-based citation mapping</strong> so answers cite the right document. It is the <strong>preferred source for large content volume and enterprise-grade relevance</strong> — the same service you already know from Foundry work, consumed here as a knowledge source rather than wired through an SDK. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-azure-ai-search">source</a>]</p>
+
+<h3>Selection criteria — the exam table</h3>
+
+<table>
+  <tr><th>Your content or need</th><th>Choose</th></tr>
+  <tr><td>Structured records</td><td><strong>Dataverse</strong></td></tr>
+  <tr><td>Semi-structured content</td><td><strong>Azure AI Search</strong></td></tr>
+  <tr><td>Unstructured documents</td><td><strong>SharePoint/OneDrive via Dataverse</strong></td></tr>
+  <tr><td>High precision required</td><td><strong>AI Search semantic ranking</strong></td></tr>
+  <tr><td>Broad coverage across many sources</td><td><strong>Generative orchestration</strong></td></tr>
+</table>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory: contrast classic vs generative orchestration in exactly four bullets — how selection happens, where tools can run, where knowledge sits, and what happens per turn. Then state the two hard knowledge limits and the node-level priority rule. Scroll up and check; any bullet you missed is a dimension you haven't attached to the distinction yet.
+</div>
+
+<h2>Topics: the unit of conversational logic</h2>
+
+<p>A <strong>topic</strong> binds conversational logic to an intent. Its components: <strong>trigger phrases</strong> (written in real user language, not system-speak), <strong>message nodes</strong> (what the agent says), <strong>question nodes</strong> (choice lists, text, dates, numbers — the slots you fill), <strong>conditions and branching</strong>, and <strong>actions</strong> (Dataverse updates, Power Automate, external data). Topics get selected by trigger phrases, NL matching, or — under generative orchestration — by description. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/12-design-topics-for-copilot-studio">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/topics-overview">source</a>]</p>
+
+<h3>The five topic types</h3>
+
+<table>
+  <tr><th>Type</th><th>Purpose</th><th>Example</th></tr>
+  <tr><td><strong>Instructional</strong></td><td>Walk the user through a how-to</td><td>"Reset MFA method"</td></tr>
+  <tr><td><strong>Action</strong></td><td>Do something in a system</td><td>"Create support ticket"</td></tr>
+  <tr><td><strong>Informational</strong></td><td>Answer a stable fact</td><td>"Business hours"</td></tr>
+  <tr><td><strong>System</strong></td><td>Platform-owned conversation moments</td><td>Greeting, escalation, fallback</td></tr>
+  <tr><td><strong>Reusable</strong></td><td>Shared logic called from many topics</td><td>Authentication</td></tr>
+</table>
+
+<p><strong>Entity extraction</strong> is what makes question nodes useful: the node pulls structured values — names, numbers, dates — out of the user's reply so downstream actions receive clean parameters instead of raw prose. Design best practices: clarity and brevity; structured questions; entity extraction for the values actions need; consistent tone (Microsoft Writing Style Guide); and test with real user phrasing, not the phrasing the team invented in the design doc. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/12-design-topics-for-copilot-studio">source</a>]</p>
+
+<h3>System topics — including the one people forget</h3>
+
+<p>System topics trigger automatically at platform-owned moments: <strong>greeting, escalation, fallback, end of conversation, multiple-topics-matched disambiguation, and error handling</strong>. The disambiguation one earns its keep: when a user turn matches <em>more than one</em> topic, the agent asks the user which they meant — a choice list instead of a coin flip. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-system-topics">source</a>]</p>
+
+<h3>The fallback topic pattern</h3>
+
+<p>When no intent matches, the fallback topic owns the turn. The pattern: <strong>acknowledge</strong> the miss ("I'm not sure I understood that") → <strong>offer alternatives</strong> the agent can actually do → <strong>optionally redirect to a human</strong> → <strong>capture feedback</strong> so coverage improves. The discipline that goes with it: <strong>don't overuse fallback — build strong intent coverage first</strong>. A fallback that fires constantly is a coverage metric telling you to author more topics, not a feature to be proud of. Analogy for the Foundry-minded: topics are intent-routed handlers, and fallback is the 404 handler — you need one, but a busy 404 means your routes are wrong. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-system-fallback-topic">source</a>]</p>
+
+<h2>NLU vs CLU vs generative — the language-understanding decision</h2>
+
+<p>Three mechanisms can interpret what the user said. They are not interchangeable, and the exam's job is to make you prove you know when each wins. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/16-determine-use-of-standard-nlp-vs-clu-vs-generative-orchestration">source</a>]</p>
+
+<table>
+  <tr><th></th><th>Standard NLU</th><th>Azure CLU</th><th>Generative orchestration</th></tr>
+  <tr><td><strong>Mechanism</strong></td><td>Rules, patterns, training datasets</td><td>Trainable AI classification models</td><td>LLM interpretation of the message</td></tr>
+  <tr><td><strong>Input profile</strong></td><td>High precision, low variability; structured commands</td><td>Varied phrasing within bounded topics</td><td>Unstructured, unpredictable messages</td></tr>
+  <tr><td><strong>Strengths</strong></td><td>Deterministic responses</td><td>Scalable trainable models; entity extraction; multilingual; continuous updates</td><td>Summarization, rewriting, generation, reasoning, multi-turn; grounding + action routing</td></tr>
+  <tr><td><strong>Best for</strong></td><td>Regulated processes needing deterministic responses</td><td>Explicit intent routing</td><td>Enterprise grounding; reasoning and content tasks; multi-step conversations</td></tr>
+</table>
+
+<h3>The scenario decision table</h3>
+
+<table>
+  <tr><th>Scenario</th><th>Best fit</th></tr>
+  <tr><td>Structured commands</td><td>NLU</td></tr>
+  <tr><td>Regulatory accuracy</td><td>NLU best; CLU good</td></tr>
+  <tr><td>Moderate phrasing variability</td><td>CLU</td></tr>
+  <tr><td>Highly variable or ambiguous input</td><td>Generative</td></tr>
+  <tr><td>Enterprise grounding required</td><td>Generative</td></tr>
+  <tr><td>Reasoning, summarization, content generation</td><td>Generative</td></tr>
+  <tr><td>Explicit intent routing</td><td>CLU</td></tr>
+  <tr><td>Multi-step conversations</td><td>Generative best; CLU good</td></tr>
+</table>
+
+<p>The best practices that close the section: <strong>start with NLU/CLU for structured tasks</strong> — don't pay generative prices for deterministic work; <strong>always ground generative answers</strong> — ungrounded generation is a hallucination with a UI; wrap generative behavior in <strong>guardrails</strong> (instructions, actions, topic triggers); and <strong>weigh the cost and compute of generative</strong> before defaulting to it. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/16-determine-use-of-standard-nlp-vs-clu-vs-generative-orchestration">source</a>]</p>
+
+<h2>Reasoning modes: standard vs deep</h2>
+
+<p>Independent of orchestration mode, an agent's behavior (instructions, knowledge, actions, policies) runs on one of two reasoning modes: [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/7-design-agent-behaviors-in-copilot-studio">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/authoring-reasoning-models">source</a>]</p>
+
+<table>
+  <tr><th></th><th>Standard reasoning</th><th>Deep reasoning (preview)</th></tr>
+  <tr><td><strong>Built for</strong></td><td>Conversational responses, summaries, simple calculations, basic workflow help</td><td>Multi-step tasks, complex business rules, analytical processes, decision trees, scenario planning, constraint/trade-off evaluation</td></tr>
+  <tr><td><strong>Profile</strong></td><td>Fast, low compute, high-volume</td><td>Slower and costlier per call</td></tr>
+  <tr><td><strong>Choose when</strong></td><td>The default; volume workloads</td><td>High-precision logic, multi-stage evaluation, historical-data recommendations, validation logic, problem decomposition</td></tr>
+</table>
+
+<p>The judgment: deep reasoning's extra latency and cost are justified only when the task genuinely decomposes into dependent steps under constraints — a decision tree with trade-offs, a multi-stage validation. For the everyday volume of lookups and summaries, standard reasoning is the correct answer and deep reasoning is an expensive distractor. This is lesson 4's economics applied per call: match the reasoning tier to the task, the same way the model router matches the model to the request.</p>
+
+<h2>Prompt actions: reusable instruction blocks</h2>
+
+<p>A <strong>prompt action</strong> is a reusable block of instructions an agent calls to generate responses, reason, transform or summarize, follow structured instructions, and interact with variables. Think of it as a pure function with a prompt body: defined once, called from many places, versioned and governed. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/18-design-prompt-actions-in-copilot-studio">source</a>]</p>
+
+<h3>Prompt Coach — the five sections</h3>
+
+<p>Copilot Studio's <strong>Prompt Coach</strong> template enforces a consistent structure: <strong>Goal | Context | Instructions/Rules | Examples (optional) | Output Format</strong>. The authoring principles that go with it: task clarity (imperative verbs); organizational tone (Microsoft Writing Style — clear, concise, action-oriented); output control (word limits, required fields, explicit exclusions). [<a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/agent-template-prompt-coach">source</a>]</p>
+
+<h3>The five types — and where they embed</h3>
+
+<table>
+  <tr><th>Type</th><th>What it does</th></tr>
+  <tr><td><strong>Transform</strong></td><td>Reshape content from one form to another</td></tr>
+  <tr><td><strong>Summarize</strong></td><td>Condense content — e.g., summarize a case before escalation</td></tr>
+  <tr><td><strong>Extract</strong></td><td>Pull specific values out of content</td></tr>
+  <tr><td><strong>Generate</strong></td><td>Create new content</td></tr>
+  <tr><td><strong>Classify</strong></td><td>Assign content to a category</td></tr>
+</table>
+
+<p>Prompt actions embed in four places: <strong>topics</strong>, <strong>agent flows</strong> (reasoning before an action fires), <strong>fallback logic</strong>, and <strong>business processes</strong>. The governing best practice is <strong>modular — one task per prompt</strong>: a summarize-and-classify prompt does two jobs badly and can't be reused for either. Use constraints, examples sparingly, guarded language; test with multiple phrasings; run Prompt Coach; and <strong>document each prompt action for governance and auditing</strong> — these are the artifacts lesson 3's CoE prompt library exists to curate. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/18-design-prompt-actions-in-copilot-studio">source</a>]</p>
+
+<h2>Agent flows vs Power Automate cloud flows</h2>
+
+<p><strong>Agent flows</strong> are automation native to Copilot Studio: a <strong>trigger</strong> (manual, scheduled, system event, or another agent) plus <strong>actions</strong>, with consistent execution and end-to-end visibility. Two facts make them architecturally distinct: <strong>no Power Automate license is required</strong>, and usage is <strong>billed from Copilot message capacity</strong>. You author one by describing it in natural language — Copilot generates the flow — or by using the visual node-based designer, and they integrate with Forms, D365, Dataverse, email, APIs, and custom connectors. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/17-design-agents-and-agent-flows-with-copilot-studio">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/use-agent-flows/">source</a>]</p>
+
+<table>
+  <tr><th></th><th>Agent flow</th><th>Power Automate cloud flow</th></tr>
+  <tr><td><strong>Licensing</strong></td><td>No Power Automate license; billed from Copilot message capacity</td><td>Requires a Power Automate license</td></tr>
+  <tr><td><strong>Best for</strong></td><td>AI-driven conversational automation</td><td>Enterprise integration</td></tr>
+  <tr><td><strong>Builder experience</strong></td><td>Natural-language authoring plus visual designer, inside Copilot Studio</td><td>The Power Automate design surface</td></tr>
+</table>
+
+<p>The durable-functions analogy: an agent flow is a durable function wearing a natural-language frontend — a trigger, then deterministic, observable step execution with state carried for you. Reach for a cloud flow when the automation is really enterprise integration that happens to exist near an agent. Best practices: one clear scenario per flow; concise instructions; prototype in natural language, then refine visually; <strong>test the agent and the flow together</strong>; monitor the analytics; and keep flows <strong>modular — one per major task</strong>, the same discipline as prompt actions. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/17-design-agents-and-agent-flows-with-copilot-studio">source</a>]</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">1. Customers write in unpredictable, free-form language, and a single reply often needs both a policy answer and a refund action. Topics exist for the top intents. Which orchestration mode should the agent use?</p>
+  <button class="opt" data-key="a">Classic orchestration matching trigger phrases to one topic</button>
+  <button class="opt" data-key="b">Classic orchestration with knowledge search as fallback</button>
+  <button class="opt" data-key="c">Generative orchestration selecting topics, tools, and knowledge</button>
+  <button class="opt" data-key="d">Generative orchestration limited to a single active topic</button>
+  <p class="why">Generative orchestration exists for exactly this: unpredictable phrasing, and a turn that combines topics, tools, and knowledge in one plan — with proactive knowledge search rather than knowledge-as-fallback. Option d contradicts itself: combining beyond a single topic is the defining capability.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">2. A support agent has eight unstructured sources — SharePoint sites and uploaded manuals — attached at the agent level. Answers draw on five sources but never the other three, for every test user. Most likely cause?</p>
+  <button class="opt" data-key="a">The three sources failed permission trimming for every user</button>
+  <button class="opt" data-key="b">The three sources were never indexed into Dataverse</button>
+  <button class="opt" data-key="c">The agent exceeded the 500 knowledge object limit</button>
+  <button class="opt" data-key="d">Retrieval searches at most five unstructured sources at once</button>
+  <p class="why">The simultaneous-retrieval ceiling is five unstructured sources — the other three are simply never searched. "Every test user" rules out permission trimming, which is per-user; and 500 objects is a total-attachment ceiling, not a per-retrieval one. The fix: consolidate sources or front the corpus with Azure AI Search.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">3. Inside one topic, a generative answers node names the HR policy library as its source. The agent also has agent-level knowledge across the public website. When the conversation reaches that node, what does it search?</p>
+  <button class="opt" data-key="a">The agent-level website, then the node-level library</button>
+  <button class="opt" data-key="b">The node-level policy library, prioritized over agent-level</button>
+  <button class="opt" data-key="c">Every configured source, merged with equal weighting</button>
+  <button class="opt" data-key="d">Only general knowledge, since topics override sources</button>
+  <p class="why">Node-level sources are prioritized over agent-level sources. That priority is the designed mechanism for scoping a specialized flow to its own corpus without restructuring the whole agent's knowledge.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">4. Users regularly ask things no topic covers. You want the miss acknowledged, a few alternative requests offered, an optional handoff to a human, and the miss logged for review. What do you configure?</p>
+  <button class="opt" data-key="a">A reusable topic shared across the agent's topics</button>
+  <button class="opt" data-key="b">An instructional topic with broad trigger phrases</button>
+  <button class="opt" data-key="c">The fallback topic with escalation and feedback</button>
+  <button class="opt" data-key="d">The multiple-topics-matched system topic choices</button>
+  <p class="why">Acknowledge → alternatives → optional human redirect → capture feedback is the fallback topic pattern. The multiple-topics-matched topic is disambiguation — it fires when several topics match, not when none do. And if fallback fires often, invest in intent coverage rather than decorating the fallback.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">5. A bank's agent must run an account-closure process: a fixed set of commands, deterministic and auditable responses, regulated wording. Which language approach fits best?</p>
+  <button class="opt" data-key="a">Standard NLU over rules and training data</button>
+  <button class="opt" data-key="b">Azure CLU with a trained classification model</button>
+  <button class="opt" data-key="c">Generative orchestration with grounded answers</button>
+  <button class="opt" data-key="d">Deep reasoning with constraint evaluation logic</button>
+  <p class="why">Structured commands plus a regulated process needing deterministic responses is standard NLU's explicit niche — the decision table maps both rows there. CLU handles varied phrasing you don't have; generative adds cost and nondeterminism you can't accept; deep reasoning solves a different problem.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">6. An HR agent must recognize widely varied phrasings across a bounded set of benefits intents, pull dates and names out of requests, and work in three languages. Best fit?</p>
+  <button class="opt" data-key="a">Standard NLU with rules per expected phrasing</button>
+  <button class="opt" data-key="b">Classic orchestration with long trigger-phrase lists</button>
+  <button class="opt" data-key="c">Generative answers grounded on the HR site</button>
+  <button class="opt" data-key="d">Azure CLU with a trained classification model</button>
+  <p class="why">Varied phrasing within bounded topics, entity extraction, and multilingual support are CLU's three named strengths. Standard NLU wants low variability you don't have; trigger-phrase lists don't scale to this; generative answers retrieve knowledge rather than route intents with extracted entities.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">7. Makers without Power Automate licenses need an automation the agent can trigger: create a Dataverse record, then email a confirmation. It should be authored in natural language. Which tool?</p>
+  <button class="opt" data-key="a">A Power Automate cloud flow with standard connectors</button>
+  <button class="opt" data-key="b">An agent flow authored inside Copilot Studio</button>
+  <button class="opt" data-key="c">A Computer Use action driving the target web app</button>
+  <button class="opt" data-key="d">A custom connector deployed to the environment</button>
+  <p class="why">Agent flows are native to Copilot Studio, need no Power Automate license, bill from Copilot message capacity, and author from natural language — every constraint in the stem. Computer Use is the no-API last resort, and a custom connector is plumbing, not the automation itself.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">8. An agent answers a high volume of simple order-status questions — straightforward lookups, brief conversational replies, simple math. Latency and cost matter. Which reasoning mode?</p>
+  <button class="opt" data-key="a">Standard reasoning — fast, low-compute responses at volume</button>
+  <button class="opt" data-key="b">Deep reasoning — multi-step planning for the lookups</button>
+  <button class="opt" data-key="c">Deep reasoning — the lookups touch Dataverse data</button>
+  <button class="opt" data-key="d">Standard reasoning — preview modes are not allowed here</button>
+  <p class="why">Simple, high-volume, latency-sensitive work is standard reasoning's stated profile. Deep reasoning is for multi-step, constraint-heavy tasks — touching Dataverse doesn't make a lookup one. Option d invents a policy; preview status is a consideration, not the decision criterion named in the scenario.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">9. A returns agent must (1) summarize the conversation for the case record and (2) classify the return reason. How should the prompt actions be structured?</p>
+  <button class="opt" data-key="a">One prompt action that summarizes and classifies together</button>
+  <button class="opt" data-key="b">One prompt action per task — summarize and classify</button>
+  <button class="opt" data-key="c">One generative answers node covering both behaviors</button>
+  <button class="opt" data-key="d">One system topic triggered for both operations</button>
+  <p class="why">Modular, one task per prompt: a Summarize action and a Classify action, each reusable, testable, and governable on its own. A combined prompt does both jobs worse and neither job reusefully; generative answers retrieve knowledge; system topics aren't a vehicle for prompt logic.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">10. An autonomous agent should start when a Dataverse row is added and use the row's data. Which statement about its event trigger is correct?</p>
+  <button class="opt" data-key="a">Trigger payloads carry context but skip authorization checks</button>
+  <button class="opt" data-key="b">Trigger payloads carry data and never impact billing</button>
+  <button class="opt" data-key="c">Trigger payloads only fire while a user session is active</button>
+  <button class="opt" data-key="d">Trigger payloads carry data, need authorization, impact billing</button>
+  <p class="why">Event-trigger payloads carry data, instructions, and context; triggers must be explicitly authorized; and they impact billing. The whole point of an autonomous trigger is firing <em>without</em> a user session — options a and b each drop one of the two governance facts the exam pairs together.</p>
+</div>
+
+<h2>Apply it: Contoso's customer-service build</h2>
+
+<p>Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> Contoso wants a customer-service agent. Requirements: customers write in free form; the top two intents (order status, start a return) are well known and need structured data capture; policy answers live on three SharePoint sites; product manuals are PDFs; case history sits in Dataverse; complaints must reach a human; the agent must create cases. Design the orchestration mode, knowledge architecture, topic set, and safety rules.</p>
+<details><summary>Your design?</summary>
+<p><strong>Orchestration:</strong> generative — free-form phrasing, turns that blend knowledge answers with actions, and auto-generated questions for missing inputs; the well-known intents still get authored topics, which generative mode selects by description. <strong>Topics:</strong> an action topic per top intent ("Check order status", "Start a return") with question nodes and entity extraction (order number, dates); system topics left in place, including multiple-topics-matched disambiguation. <strong>Knowledge:</strong> the three SharePoint sites (permission-trimmed) plus the uploaded PDF manuals (indexed into Dataverse) — four unstructured sources, inside the five-source retrieval ceiling; case history as a structured Dataverse source. <strong>Safety &amp; rules:</strong> "escalate on complaint keywords" wired to the escalation system topic. <strong>Action:</strong> a CreateCase Dataverse action or a modular agent flow. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/7-determine-generative-ai-knowledge-sources-for-copilot-studio-agents">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/12-design-topics-for-copilot-studio">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> Six weeks later, Contoso reports: every user who asks "How many vacation days do I accrue at year five?" gets an answer drawn from the public benefits website instead of the employee policy manual — regardless of who asks. Give an ordered diagnosis.</p>
+<details><summary>Your diagnosis?</summary>
+<p>Work the checklist in order. <strong>(1) General knowledge:</strong> if enabled, the agent can answer out-of-domain from the model's own knowledge — check it first and disable it if in-domain-only answers are required. <strong>(2) The five-source ceiling:</strong> count unstructured sources; if the manual's source is the sixth, it is never searched — consolidate, or move the corpus to Azure AI Search. <strong>(3) Node-level priority:</strong> if a generative answers node in this flow names its own sources, those override agent-level sources — a stale or wrong node-level source answers every turn. <strong>(4) Not permission trimming:</strong> the failure hits <em>every</em> user identically, and trimming is per-user — "everyone gets the wrong source" is the tell that rules it out before you spend an hour in SharePoint permissions. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-copilot-studio">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-unstructured-data">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> Contoso's equipment-checkout process: an employee requests equipment → eligibility is checked against Dataverse → a manager approves → the asset record is updated → a confirmation email goes out. Separately, employees ask policy questions ("Can I check out a laptop for travel?"). Decompose this into topics, prompt actions, and automation.</p>
+<details><summary>Your decomposition?</summary>
+<p><strong>Policy questions:</strong> generative answers over the equipment-policy SharePoint site — informational coverage, no authored topics per question. <strong>"Request equipment" action topic:</strong> question nodes with entity extraction (equipment type, dates), a condition node branching on the eligibility result. <strong>Prompt actions:</strong> a Summarize action that condenses the request and conversation for the manager's approval, and a Classify action for the equipment category if free-text entry is allowed — two modular prompts, one task each. <strong>Automation:</strong> one agent flow per major task — a flow triggered by the agent to create the asset record and route the approval (manual trigger from the topic, or a system-event trigger on the Dataverse row), and the confirmation email as part of that flow's actions; test agent and flow together. If eligibility is declined, the topic branches to a polite refusal with an escalation option rather than forcing the process through. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/17-design-agents-and-agent-flows-with-copilot-studio">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/18-design-prompt-actions-in-copilot-studio">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+Three overlaps bank toward AI-103. <strong>(a) CLU:</strong> the NLU/CLU/generative decision table resurfaces in the text-analysis domain — "extract entities, topics, summaries, structured JSON outputs" and "customize language model outputs for domain tasks (domain extraction)" — with entity extraction examined hands-on. <strong>(b) Prompt structure:</strong> Prompt Coach's Goal | Context | Instructions/Rules | Examples | Output Format is the same skeleton as the prompt design framework (Intent | Context | Instruction | Examples | Output | Constraints) that AI-103 examines under "tune generation behavior: prompt engineering." <strong>(c) Retrieval:</strong> this lesson's knowledge pipeline — chunking, vectorization, semantic ranking, permission-aware grounding — is AI-103's "choose an appropriate method for retrieval and indexing" plus "configure semantic search, hybrid search, vector search for grounding." The difference is altitude: AB-100 asks <em>which orchestration or knowledge mode fits</em>; AI-103 asks you to <em>implement it in the Foundry SDK and Python</em>. Learn the selection logic now; the code reps come right after.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now design a Copilot Studio agent end to end — anatomy, agent type, orchestration mode, knowledge architecture inside its hard limits, topics and fallback, the NLU/CLU/generative call, reasoning mode, prompt actions, and agent flows — and defend each choice in the Design domain's own vocabulary.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/knowledge-copilot-studio">Knowledge in Copilot Studio</a> (~20 min) — the documentation hub behind this lesson's knowledge architecture: source types, the Dataverse indexing pipeline, and the limits the exam quotes verbatim.
+</div>
+
+<div class="teacher">
+Which mapping felt forced — generative orchestration as Foundry's automatic tool calling, the five-source ceiling's design consequences, or the NLU/CLU/generative boundary? Push back; those forks are where the Design domain plants its distractors, and your questions set the agenda for lesson 0006 (D365 Customer Experience Copilot).
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0005 · Prev: <a href="../lessons/0004-roi-tco-model-router.html">lesson 0004</a> · Glossary: <a href="../reference/glossary.html">Copilot Studio terms</a> · Next: <a href="../lessons/0006-d365-customer-experience-copilot.html">lesson 0006 D365 Customer Experience Copilot</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

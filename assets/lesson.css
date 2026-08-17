@@ -1,0 +1,67 @@
+/* Shared stylesheet for AB-100 lessons and reference docs. Tufte-inspired. */
+:root {
+  --ink: #1a1a1a;
+  --paper: #fffff8;
+  --accent: #7a1f1f;
+  --muted: #666;
+  --ok: #1d6b3c;
+  --bad: #a02a2a;
+  --rule: #d8d4c8;
+}
+* { box-sizing: border-box; }
+body {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-size: 1.06rem;
+  line-height: 1.62;
+}
+h1, h2, h3 { line-height: 1.25; font-weight: normal; }
+h1 { font-size: 1.9rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.35rem; margin-top: 2.4rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.2rem; }
+h3 { font-size: 1.12rem; font-style: italic; margin-top: 1.8rem; }
+p { margin: 0.9rem 0; }
+a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+a:hover { border-bottom-style: solid; }
+.subtitle { font-style: italic; color: var(--muted); margin-top: 0; }
+table { border-collapse: collapse; width: 100%; margin: 1.2rem 0; font-size: 0.97rem; }
+th, td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-variant: small-caps; letter-spacing: 0.04em; border-bottom: 2px solid var(--ink); }
+ul, ol { padding-left: 1.4rem; }
+li { margin: 0.3rem 0; }
+code { font-size: 0.92em; }
+.recall, .win, .source-box, .teacher, .ai103 {
+  padding: 0.9rem 1.1rem; margin: 1.4rem 0; border-left: 3px solid var(--accent);
+  background: #f7f4ea;
+}
+.recall { border-left-color: #5a5aa0; background: #f3f2fa; }
+.win { border-left-color: var(--ok); background: #f1f7f1; }
+.teacher { border-left-color: var(--muted); background: #f4f4f0; font-style: italic; }
+.ai103 { border-left-color: #155a8a; background: #eef4f9; }
+.boxlabel { display: block; font-variant: small-caps; letter-spacing: 0.06em; font-style: normal; font-weight: bold; margin-bottom: 0.3rem; }
+/* Quiz */
+.quiz-q { margin: 1.6rem 0; padding: 1rem 1.1rem; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
+.quiz-q .q { font-weight: bold; margin-bottom: 0.6rem; }
+.quiz-q .opt {
+  display: block; width: 100%; text-align: left; margin: 0.35rem 0; padding: 0.5rem 0.7rem;
+  font: inherit; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
+}
+.quiz-q .opt:hover { border-color: var(--accent); }
+.quiz-q .opt.correct { background: #e8f2ea; border-color: var(--ok); }
+.quiz-q .opt.incorrect { background: #f7e9e9; border-color: var(--bad); }
+.quiz-q .why { display: none; margin-top: 0.6rem; font-size: 0.95rem; color: var(--muted); }
+.quiz-q.answered .why { display: block; }
+.quiz-q.answered .opt { cursor: default; }
+/* Case study reveal */
+details { margin: 0.9rem 0; padding: 0.7rem 1rem; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
+summary { cursor: pointer; font-style: italic; color: var(--accent); }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--muted); }
+@media print {
+  body { background: #fff; font-size: 11pt; max-width: none; }
+  .quiz-q .opt { border: none; padding: 0.1rem 0; }
+  .quiz-q .why { display: block; }
+  a { border-bottom: none; }
+}

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0004 — ROI, TCO, and the model router</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>ROI, TCO &amp; the model router</h1>
+<p class="subtitle">Evaluate costs and benefits — the arithmetic that closes out the Plan domain</p>
+
+<p>Lesson 4 of your AB-100 course, and the last of the Plan domain. Lessons 1–3 picked the platform, proved the data estate, and staffed the operating model. This lesson is where the architect stops describing the architecture and starts defending the numbers: a measurable ROI case, an honest TCO, a build/buy/extend verdict, and a model-routing strategy that keeps the economics working after launch. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall so far</span>
+<p>Don't scroll back to earlier lessons. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> (Lesson 1) Name the five rungs of the agent ladder in escalation order — and the principle that governs where you start.</p>
+<details><summary>Reveal</summary>
+<p>Prebuilt SaaS agents → extend Microsoft 365 Copilot → Copilot Studio → Microsoft Foundry → GPUs &amp; containers. SaaS-first principle: always open by asking whether a prebuilt SaaS agent meets the functional requirements; if yes, stop — custom builds carry governance, evaluation, and ops burden you must justify.</p>
+</details>
+<p><strong>2.</strong> (Lesson 2) Name the five grounding dimensions. Which one fails silently, and why?</p>
+<details><summary>Reveal</summary>
+<p>Accuracy, relevance, timeliness, cleanliness, availability. <strong>Availability</strong> fails silently: retrieval is permission-trimmed per user at query time, so the agent answers from a poorer evidence base and nobody gets an error.</p>
+</details>
+<p><strong>3.</strong> (Lesson 3) A funded, sponsored, well-governed agent ships on schedule — and six months later adoption is near zero because users were never trained. Which missing role explains it, and why does adding an engineer not help?</p>
+<details><summary>Reveal</summary>
+<p>The <strong>change management &amp; skilling lead</strong> — the role that owns training, enablement, and adoption. AB-100 tests roles as failure-mode pairings: match the symptom ("working technology, dying adoption") to the absent role. Technical roles don't fix an enablement gap.</p>
+</details>
+</div>
+
+<h2>What ROI has to be before it's anything else</h2>
+
+<p>Microsoft's bar for an AI ROI claim is four adjectives, and the exam uses them as a filter: ROI must be <strong>measurable</strong>, <strong>repeatable</strong>, <strong>aligned to business outcomes</strong>, and <strong>grounded in real usage analytics</strong>. A savings figure that fails any one of the four is a guess wearing a suit. This is why the discipline starts with a <strong>"no-AI" baseline</strong>: frame one process, set its boundaries and a baseline period, and capture baseline metrics — volume, average handle time, rework rate, backlog, satisfaction — <em>before</em> anything is built. No baseline, no ROI; only vibes. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<p>Five benefit categories. Learn them as a checklist you run against any proposed agent — a claim that fits none of the five isn't a benefit: [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<table>
+  <tr><th>Category</th><th>What it captures</th><th>Example measures</th></tr>
+  <tr><td><strong>Productivity gains</strong></td><td>Time returned to workers</td><td>Time saved per task, less manual entry, faster resolution</td></tr>
+  <tr><td><strong>Cost savings</strong></td><td>Work removed from the system</td><td>Labor hours avoided, ticket volume deflected</td></tr>
+  <tr><td><strong>Revenue impact</strong></td><td>Top-line movement</td><td>Conversion rate, lead qualification, retention, upsell</td></tr>
+  <tr><td><strong>Risk reduction</strong></td><td>Bad outcomes made rarer</td><td>Compliance violations avoided, error rates down</td></tr>
+  <tr><td><strong>Strategic / innovation value</strong></td><td>Optionality and capability</td><td>New offerings, faster experimentation — real, but hardest to monetize</td></tr>
+</table>
+
+<p>Underneath the categories sit three <strong>value levers</strong> that actually generate the numbers: <em>time saved per transaction</em>, <em>quality lift</em> (error reduction, first-contact resolution, fewer escalations), and <em>capacity/throughput</em>. The six-step framework that organizes the whole exercise: <strong>define business outcomes → identify ROI drivers → calculate TCO → quantify benefits → compare</strong> (payback period, NPV, cost-benefit ratio, annualized ROI) <strong>→ validate with stakeholders</strong> — Finance, Ops, process owners, and the AI CoE. Skipping the validation step is how a beautiful spreadsheet dies in a budget meeting. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<h2>Copilot Studio ROI analytics — where the numbers come from</h2>
+
+<p>Copilot Studio ships built-in analytics across four families. Know what lives in each — exam questions describe a metric and ask what it tells you: [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-cost-savings">source</a>]</p>
+
+<table>
+  <tr><th>Family</th><th>Metrics</th><th>Question it answers</th></tr>
+  <tr><td><strong>Usage</strong></td><td>Sessions, active users, session duration</td><td>Is anyone actually using it?</td></tr>
+  <tr><td><strong>Automation</strong></td><td>Completion rate, abandonment rate, task success</td><td>Does it finish the job when engaged?</td></tr>
+  <tr><td><strong>Cost savings</strong></td><td>Time saved, savings per task, workload reduction</td><td>What is that worth?</td></tr>
+  <tr><td><strong>Quality</strong></td><td>Feedback scores, error rates, escalation frequency</td><td>Is it doing the job well?</td></tr>
+</table>
+
+<p>The <strong>Savings capability</strong> is the exam-relevant detail. On the agent's <strong>Analytics page</strong> you configure a savings value — <strong>per run or per tool</strong> — and Copilot Studio multiplies it across measured usage to produce a running savings figure. Two governance nuances: admins <strong>can disable money-based savings</strong>, in which case you track <em>time</em> saved and convert it to money yourself; and the configured per-run value is an assumption you must defend, which is why it should come from your own pilot telemetry rather than a vendor's brochure. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/analytics-cost-savings">source</a>, <a href="https://learn.microsoft.com/en-us/power-platform/release-plan/2025wave1/microsoft-copilot-studio/analyze-agent-return-investment">source</a>]</p>
+
+<h2>The five TCO drivers</h2>
+
+<p>Total cost of ownership for an AI solution decomposes into five drivers. Memorize the set — AB-100 loves "which driver dominates this scenario" questions: [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<ol>
+  <li><strong>Infrastructure</strong> — compute, hosting, networking, environments.</li>
+  <li><strong>Development &amp; integration</strong> — agent design and testing, prompt engineering, wiring into systems of record.</li>
+  <li><strong>Data quality &amp; preparation</strong> — cleaning, deduplication, restructuring, permission repair so grounding works. The most underestimated driver.</li>
+  <li><strong>Expertise &amp; staffing</strong> — scarce AI/ML and data skills, hired or grown.</li>
+  <li><strong>Operations &amp; licensing</strong> — licenses, monitoring, evaluation, support, ongoing prompt and content maintenance.</li>
+</ol>
+
+<p>Two structural points. First, TCO <strong>spans the full lifecycle</strong>, not just go-live: development (data prep, prompt engineering, agent design/testing, integration), deployment (infrastructure, licensing, security/compliance, API usage), operational (monitoring and evaluation, retraining, prompt library maintenance, support, training), change management (skilling, communications, process redesign), and eventually decommissioning. Second, the drivers connect backward to lesson 2: a polluted, over-permissioned estate is not just a grounding defect — it is a TCO line item, paid in the data-quality driver whether you budgeted for it or not. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<h2>The ROI math — learn it until it's boring</h2>
+
+<p>Three formulas carry the exam's computational questions: [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<p><code>Annual_Benefit = (Minutes_Saved_per_Run / 60) × Runs_per_Year × Labor_Rate</code> &nbsp;<em>(plus error cost avoided and backlog/working-capital effects, when you can quantify them)</em></p>
+<p><code>Net_Benefit = Annual_Benefit − Annual_TCO</code> &nbsp;&nbsp; <code>ROI% = (Net_Benefit / Annual_TCO) × 100</code></p>
+<p><code>Payback(months) = Initial_OneTime_Cost / Net_Monthly_Benefit</code></p>
+
+<h3>Worked example: the email triage agent</h3>
+
+<p>An agent triages inbound email. It saves <strong>1.8 minutes per message</strong>; volume is <strong>50,000 messages per month</strong>; expected <strong>adoption is 60%</strong>; loaded labor rate is <strong>$45/hour</strong>. Year-1 TCO is <strong>$300,000</strong>. Walk the arithmetic — slowly, because each step is a place the exam plants a distractor:</p>
+
+<ol>
+  <li><strong>Effective runs per year.</strong> 50,000 messages/month × 12 months × 60% adoption = <strong>360,000 runs</strong>. <em>The subtlety the exam loves: adoption multiplies the volume, not the minutes.</em> If you skip the 60%, you overstate the benefit by two-thirds.</li>
+  <li><strong>Hours saved.</strong> 360,000 × 1.8 minutes ÷ 60 = <strong>10,800 hours</strong>.</li>
+  <li><strong>Annual benefit.</strong> 10,800 × $45 = <strong>$486,000</strong>.</li>
+  <li><strong>Net benefit.</strong> $486,000 − $300,000 = <strong>$186,000</strong>.</li>
+  <li><strong>ROI.</strong> $186,000 ÷ $300,000 × 100 = <strong>62%</strong>.</li>
+  <li><strong>Payback.</strong> Steady-state monthly benefit is $486,000 ÷ 12 = $40,500. Treating the $300k year-1 investment as the upfront cost to recover: $300,000 ÷ $40,500 ≈ <strong>7.4 months</strong>.</li>
+</ol>
+
+<p>Three traps to internalize: dividing minutes by 60 <em>before</em> multiplying by runs (order doesn't change the result, but forgetting the ÷60 entirely inflates benefits 60× — an instant sanity check); computing ROI on <em>gross</em> benefit ($486k ÷ $300k = 162%) instead of net; and reporting payback against gross monthly benefit while quietly ignoring run costs in years 2+. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<h3>Sensitivity bands — because every input is a guess</h3>
+
+<p>Adoption, minutes saved, and labor rates are estimates, so a single-point ROI is false precision. Present <strong>three bands — optimistic, expected, conservative</strong> — varying adoption rate, minutes saved, labor rates, and rework effects. Holding the triage example's other inputs constant and flexing adoption alone:</p>
+
+<table>
+  <tr><th>Band</th><th>Adoption</th><th>Effective runs/yr</th><th>Annual benefit</th><th>Net (vs $300k TCO)</th><th>ROI</th></tr>
+  <tr><td>Conservative</td><td>45%</td><td>270,000</td><td>$364,500</td><td>$64,500</td><td>~22%</td></tr>
+  <tr><td>Expected</td><td>60%</td><td>360,000</td><td>$486,000</td><td>$186,000</td><td>~62%</td></tr>
+  <tr><td>Optimistic</td><td>75%</td><td>450,000</td><td>$607,500</td><td>$307,500</td><td>~103%</td></tr>
+</table>
+
+<p>Notice what the band tells the decision-maker: even the conservative case clears zero — this investment is robust to an adoption miss. If the conservative band went negative, that's a pilot-shaped answer, not a build-shaped one. And on inputs: <strong>your own telemetry sits in the driver's seat; field research is a directional anchor at best</strong>. A measured 1.8 minutes from your pilot beats an industry paper's average, every time. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>, <a href="https://arxiv.org/html/2504.11443v1">usage-analytics research</a>]</p>
+
+<p>Finally, the deliverable shape: the <strong>executive one-slide</strong> — problem and scope, the intervention, measured impact, financials, confidence and risks, and the pilot-to-scale decision. If your ROI case can't survive compression to one slide, it isn't ready for the room. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory: (1) name the five TCO drivers; (2) write the three formulas — annual benefit, ROI%, payback; (3) in the triage example, state exactly where the 60% adoption factor enters the arithmetic. Then scroll up and check. If you put adoption anywhere but the volume term, redo the worked example by hand once — that single slip is the exam's favorite trap.
+</div>
+
+<h2>Build, buy, or extend</h2>
+
+<p>The fourth rung of the Plan domain's judgment set. Each option has decision triggers — and characteristic risks the exam will dress up as scenario symptoms: [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/business-value-microsoft-copilot-solutions/5-extend-copilot-organization">source</a>]</p>
+
+<table>
+  <tr><th>Option</th><th>Choose when (triggers)</th><th>Watch out for</th></tr>
+  <tr><td><strong>Build</strong></td><td>Competitive differentiation is the point; prebuilt fails regulatory/compliance demands; data sensitivity requires full control; the org has strong AI/ML capability</td><td>Upfront cost, long timeline, maintenance burden you now own</td></tr>
+  <tr><td><strong>Buy</strong></td><td>Time-to-value is the priority; the process is standardized; AI maturity is low; you need vendor support and updates</td><td>Lock-in, limited extensibility, feature gaps</td></tr>
+  <tr><td><strong>Extend</strong></td><td>You want the Copilot/platform to absorb internal logic; domain knowledge arrives via grounding, connectors, plugins; the base model is good but needs enterprise adaptation — the balanced middle</td><td>Balanced cost, faster than build, more flexible than buy — but see the data-prep row below</td></tr>
+</table>
+
+<h3>TCO by domain — the table with the punchline</h3>
+
+<table>
+  <tr><th>TCO driver</th><th>Build</th><th>Buy</th><th>Extend</th></tr>
+  <tr><td>Infrastructure</td><td>High</td><td>Low</td><td>Medium</td></tr>
+  <tr><td>Development &amp; integration</td><td>High</td><td>Low</td><td>Medium</td></tr>
+  <tr><td>Data quality &amp; preparation</td><td>High</td><td>Low</td><td><strong>High</strong></td></tr>
+  <tr><td>Expertise &amp; staffing</td><td>High</td><td>Low</td><td>Medium</td></tr>
+  <tr><td>Operations &amp; licensing</td><td>High</td><td>Medium</td><td>Medium</td></tr>
+</table>
+
+<p>Everything in the table trends the way intuition says — build high, buy low, extend medium — <strong>except one cell: extend carries HIGH data-prep cost</strong>. The mechanism is lesson 2: extending means grounding a platform on <em>your</em> content through connectors and knowledge sources, and your content's duplicates, stale versions, and broken permissions don't clean themselves because you chose the cheap platform. "Extend is the middle-cost option" is true for four drivers and false for the one that kills projects. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<h3>The nine-step analysis flow</h3>
+
+<ol>
+  <li><strong>Define requirements</strong> — functional and non-functional.</li>
+  <li><strong>Assess strategic importance</strong> — differentiation or commodity? This single answer tilts the whole analysis toward build or toward buy.</li>
+  <li><strong>Assess vendor solutions</strong> against the requirements.</li>
+  <li><strong>Evaluate extend feasibility</strong> — can grounding, connectors, and plugins close the gap?</li>
+  <li><strong>Evaluate custom feasibility</strong> — skills, data, timeline.</li>
+  <li><strong>Estimate TCO</strong> across all five drivers, for each surviving option.</li>
+  <li><strong>Forecast ROI</strong> per option, with sensitivity bands.</li>
+  <li><strong>Weighted scoring</strong> across the criteria that matter to this org.</li>
+  <li><strong>Choose optimal value-to-cost</strong> — not lowest cost, not highest capability.</li>
+</ol>
+
+<p>Note the ordering discipline: strategy (step 2) precedes vendor assessment (step 3), and both precede any costing. Teams that start at step 6 are pricing a decision they haven't made. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+
+<h2>The model router — one endpoint, many models</h2>
+
+<p>Azure AI Foundry's <strong>model router</strong> puts a <strong>single unified endpoint</strong> in front of multiple deployed models and routes each request intelligently — by <strong>task type, model capabilities, cost, latency, or custom rules</strong> — while giving you <strong>centralized governance</strong>: versioning, monitoring, analytics, and safety in one place instead of scattered per deployment. The motivations map directly onto this lesson's economics: <strong>cost optimization</strong> (an SLM handles the simple requests, the expensive LLM only when needed, fewer tokens burned overall), <strong>performance</strong> (latency-sensitive requests to fast models, specialized tasks to specialists), <strong>reliability</strong> (automatic failover, clean switching to new model versions), and <strong>hybrid strategies</strong> mixing all of the above. [<a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/model-router">source</a>]</p>
+
+<h3>The four routing rule types — one scenario each</h3>
+
+<table>
+  <tr><th>Rule type</th><th>What it does</th><th>Concrete scenario</th></tr>
+  <tr><td><strong>Static</strong></td><td>Hard-coded mapping from a request attribute to a model</td><td>Task = classification → route to the SLM; domain = finance → route to the fine-tuned model</td></tr>
+  <tr><td><strong>Weighted</strong></td><td>Splits traffic by percentage across models</td><td>Send 10% of production traffic to the newly deployed model for A/B comparison, then ramp gradually — no hard cutover</td></tr>
+  <tr><td><strong>Fallback</strong></td><td>Redirects to a backup when the primary fails</td><td>Primary model deployment errors or is unavailable → requests flow to the backup model automatically</td></tr>
+  <tr><td><strong>Version-based</strong></td><td>Routes by model version</td><td>Production traffic to the latest stable version; a canary cohort to the experimental version</td></tr>
+</table>
+
+<p>The implementation sequence: <strong>define the routing strategy</strong> (cost-optimized, performance-optimized, accuracy-first, or hybrid) → <strong>register the models</strong> → <strong>configure the rules</strong> → <strong>integrate</strong> (agents, Copilot extensions, backends, multi-agent systems) → <strong>monitor</strong> latency, cost, accuracy, and usage distribution — then tune the rules to push cost down while holding performance. Two architect-level notes. Rules are <em>per organization</em>, not per textbook: run a <strong>routing-rule design workshop</strong> rather than copying defaults. And weighted rules plus monitoring are what make model upgrades boring — which is exactly what you want model upgrades to be. [<a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/model-router">source</a>]</p>
+
+<h2>Model-choice economics: when a custom model or SLM is justified</h2>
+
+<p>The router arbitrages cost <em>per request</em>; this section arbitrates it <em>per capability</em>. The discipline from the strategy module: custom models are the <strong>last resort of a checklist, not the first instinct of a team</strong>. A custom model is justified only when prebuilt and fine-tuned catalog options demonstrably can't solve the problem — and the burden of proof runs through a specific sequence: <strong>prompt engineering → retrieval tuning → fine-tuning → and only then a custom build</strong>. "Off-the-shelf accuracy is insufficient" is a claim you must be able to show, as persistent low precision/recall after those cheaper interventions, in a domain where wrong answers are expensive or behavior must be near-deterministic. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/">source</a>]</p>
+
+<table>
+  <tr><th>Catalog / prebuilt models suffice when…</th><th>Custom model (or customized SLM) is justified when…</th></tr>
+  <tr><td>General-purpose tasks: summarization, classification, rewriting, translation, extraction</td><td>Deep domain specificity — regulatory, contract, medical/legal/financial reasoning</td></tr>
+  <tr><td>Moderate accuracy requirements, standard enterprise knowledge interaction</td><td>Insufficient off-the-shelf accuracy <em>after</em> prompt engineering, retrieval tuning, and fine-tuning</td></tr>
+  <tr><td>Time-to-value, low cost, low risk are the priorities</td><td>High-volume economics — latency and cost per request at scale dominate</td></tr>
+  <tr><td>Standard compliance posture is acceptable</td><td>Sovereignty/residency or governance demands full control of training data, guardrails, explainability</td></tr>
+</table>
+
+<p>SLM-specific use cases cluster around: domain-tuned knowledge workflows; <strong>operationally constrained environments</strong> (edge/IoT, high-volume real-time, intermittent connectivity); security scenarios requiring full training-data control; productivity tuned to internal style; and reasoning-heavy orchestration at low cost. The anti-patterns matter as much as the use cases: building an SLM when <strong>RAG over a general model already suffices</strong>; underestimating the data-curation and evaluation effort; using an SLM for broad creative reasoning; and — the exam's favorite misconception — <strong>SLMs are NOT inherently safer than LLMs and are not a misinformation silver bullet</strong>. Safety comes from data curation, tuning, and guardrails, none of which a small parameter count provides for free. Overfitting to narrow data, poor edge-case generalization, and rushed safety tuning are the named risks. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/">source</a>, <a href="https://arxiv.org/abs/2405.20347">SLM research</a>]</p>
+
+<p>If you do customize an SLM, judge it with the <strong>SLM Success Scorecard</strong> — five metrics: <strong>task accuracy, latency, cost per 1,000 requests, safety incident rate, and drift</strong>. Note how naturally this slots into the router story: the scorecard's cost-per-1,000-requests and latency numbers are precisely the inputs a static or weighted routing rule consumes. The router is where model-choice economics goes to production. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/">source</a>]</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">1. An invoice agent saves 4 minutes per invoice across 25,000 invoices/month at 80% adoption, labor rate $50/hour. Year-1 TCO is $600,000. What is the ROI?</p>
+  <button class="opt" data-key="a">About 33% — adoption applied to volume, net over TCO</button>
+  <button class="opt" data-key="b">About 67% — full volume counted, net over TCO</button>
+  <button class="opt" data-key="c">About 133% — adoption applied to volume, gross over TCO</button>
+  <button class="opt" data-key="d">About 167% — full volume counted, gross over TCO</button>
+  <p class="why">Effective runs = 25,000 × 12 × 0.80 = 240,000. Hours saved = 240,000 × 4 ÷ 60 = 16,000. Annual benefit = 16,000 × $50 = $800,000. Net = $800,000 − $600,000 = $200,000. ROI = 200 ÷ 600 ≈ <strong>33%</strong>. Option b nets but skips adoption (($1M − $600k) ÷ $600k); option c applies adoption but divides gross benefit by TCO; option d makes both errors. The correct arithmetic always applies adoption to volume and subtracts TCO before dividing.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">2. An agent's initial one-time cost is $240,000. Steady state: annual benefit $720,000, annual run cost $120,000. What is the payback period?</p>
+  <button class="opt" data-key="a">4.0 months — initial cost over gross monthly benefit</button>
+  <button class="opt" data-key="b">4.8 months — initial cost over net monthly benefit</button>
+  <button class="opt" data-key="c">6.0 months — initial cost over halved monthly benefit</button>
+  <button class="opt" data-key="d">12.0 months — initial cost recovered in year one</button>
+  <p class="why">Net monthly benefit = ($720,000 − $120,000) ÷ 12 = $50,000. Payback = $240,000 ÷ $50,000 = <strong>4.8 months</strong>. Option a forgets the run cost ($240k ÷ $60k gross monthly); the other two are arithmetic noise. Payback divides the one-time cost by <em>net</em> monthly benefit — the formula's whole point is that run costs keep accruing while you recover the build.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">3. A firm extends Microsoft 365 Copilot with connectors to its legacy knowledge estate. Twelve weeks in, the budget is blown — not on licenses or compute, but on deduplicating, re-permissioning, and restructuring content so retrieval works. Which TCO driver did they underestimate?</p>
+  <button class="opt" data-key="a">Infrastructure provisioning and environment setup costs</button>
+  <button class="opt" data-key="b">Development and systems integration effort</button>
+  <button class="opt" data-key="c">Data quality and preparation work</button>
+  <button class="opt" data-key="d">Operations and licensing renewal costs</button>
+  <p class="why">The one cell where the extend row breaks its medium-cost pattern is data quality &amp; preparation: <strong>High</strong>. Grounding a platform on your content through connectors inherits your content's duplicates, stale versions, and broken permissions. The symptoms named — dedup, re-permissioning, restructuring — are the data-prep driver itemized.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">4. A regional bank needs an agent for a standardized, undifferentiated HR process. AI maturity is low, no ML engineers are on staff, and leadership wants value this quarter with vendor support included. Recommendation?</p>
+  <button class="opt" data-key="a">Build a fully custom agent in Microsoft Foundry</button>
+  <button class="opt" data-key="b">Extend Copilot with custom plugin logic</button>
+  <button class="opt" data-key="c">Host open models on GPU containers</button>
+  <button class="opt" data-key="d">Buy a prebuilt solution from a vendor</button>
+  <p class="why">Every trigger points to buy: time-to-value priority, standardized process, low AI maturity, vendor support wanted. Building would require the AI capability the bank lacks; extending still demands internal logic work and carries high data-prep cost; GPU hosting is the maximum-control option with no justification here.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">5. You want 10% of production traffic to hit a newly deployed model, ramping gradually while you compare quality — no hard cutover. Which routing rule type?</p>
+  <button class="opt" data-key="a">Static routing keyed on the task type</button>
+  <button class="opt" data-key="b">Fallback routing to a backup model</button>
+  <button class="opt" data-key="c">Weighted routing with an adjustable split</button>
+  <button class="opt" data-key="d">Version-based routing to latest stable</button>
+  <p class="why">Percentage-based traffic splitting for A/B tests and gradual rollouts is the weighted rule. Static maps attributes to models; fallback only fires on failure; version-based routes whole cohorts to stable versus experimental versions rather than splitting traffic by percentage.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">6. Under which condition is investing in a customized SLM most clearly justified?</p>
+  <button class="opt" data-key="a">SLMs are inherently safer and cut misinformation risk</button>
+  <button class="opt" data-key="b">The workload needs broad, open-ended creative reasoning</button>
+  <button class="opt" data-key="c">The team wants to skip data curation and evaluation</button>
+  <button class="opt" data-key="d">Catalog models stay inaccurate after prompt and retrieval tuning</button>
+  <p class="why">The justification sequence is prompt engineering → retrieval tuning → fine-tuning → custom model, and only demonstrated residual inaccuracy (or sovereignty / latency-cost-at-volume demands) clears the bar. Option a states the classic misconception — small models are not inherently safer; b and c are named anti-patterns (SLMs are wrong for broad creative reasoning, and underestimating curation/eval effort sinks these projects).</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">7. Admins have disabled money-based savings in Copilot Studio. How do you still build the ROI case for an agent?</p>
+  <button class="opt" data-key="a">Abandon ROI tracking until the setting changes</button>
+  <button class="opt" data-key="b">Track time savings per run and convert to money</button>
+  <button class="opt" data-key="c">Export raw session logs and estimate manually</button>
+  <button class="opt" data-key="d">Use vendor field-research benchmarks for savings</button>
+  <p class="why">The Savings capability degrades gracefully: when money-based savings are disabled, you track time saved and convert it to currency yourself — labor rate × hours, the same arithmetic as the ROI formula. Field research is a directional anchor at best; your own telemetry stays in the driver's seat.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">8. Which ROI claim is most defensible in an executive business review?</p>
+  <button class="opt" data-key="a">An industry study shows similar agents save 30%</button>
+  <button class="opt" data-key="b">The vendor's launch materials project rapid payback</button>
+  <button class="opt" data-key="c">Your pilot's telemetry shows measured minutes saved</button>
+  <button class="opt" data-key="d">Stakeholder interviews suggest substantial time savings</button>
+  <p class="why">ROI must be measurable, repeatable, outcome-aligned, and grounded in real usage analytics — measured pilot telemetry is the only option that satisfies all four. Studies and vendor materials are directional anchors; interviews are estimates. Own telemetry in the driver's seat, field research as a sanity check.</p>
+</div>
+
+<h2>Apply it: Litware's returns operation</h2>
+
+<p>Decide each before opening the reveal. Scenario A is a full ROI calculation — <strong>do the arithmetic on paper first</strong>; the reveal checks your numbers, not your intuition.</p>
+
+<p><strong>A.</strong> Litware (distribution, 6,000 employees) proposes a returns-processing agent. Measured pilot data: <strong>2.5 minutes saved per return</strong>, <strong>40,000 returns per month</strong>, expected adoption <strong>65%</strong>, loaded labor rate <strong>$38/hour</strong>. Year-1 TCO is <strong>$250,000</strong>, of which $180,000 is one-time build cost; steady-state run cost is $70,000/year. Compute: annual benefit, net benefit, ROI%, and payback months.</p>
+<details><summary>Your numbers?</summary>
+<p>Effective runs/year = 40,000 × 12 × 0.65 = <strong>312,000</strong> (adoption multiplies volume). Hours saved = 312,000 × 2.5 ÷ 60 = <strong>13,000 hours</strong>. Annual benefit = 13,000 × $38 = <strong>$494,000</strong>. Net vs year-1 TCO = $494,000 − $250,000 = <strong>$244,000</strong>. ROI = 244 ÷ 250 ≈ <strong>98%</strong>. Payback: net monthly benefit at steady state = ($494,000 − $70,000) ÷ 12 ≈ $35,333; $180,000 ÷ $35,333 ≈ <strong>5.1 months</strong>. Sensitivity check: at a conservative 50% adoption, benefit falls to $380,000 — net still positive ($130k, ROI ~52%), so the case is robust. Present exactly that band on the executive one-slide. [<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> The same ROI review surfaces a second initiative: a quoting agent for Litware's configure-price-quote flow. Quoting is how Litware wins deals — speed and accuracy there are genuine market differentiation. The flow touches a proprietary pricing engine no vendor supports, pricing data is contractually sensitive, and Litware has a strong data science team. A vendor demo, an extend-Copilot proposal, and a custom Foundry build are on the table. Choose, then sketch the model-routing strategy for your choice.</p>
+<details><summary>Your call?</summary>
+<p><strong>Build — the triggers line up exactly:</strong> competitive differentiation is the point, prebuilt can't reach the proprietary engine, data sensitivity demands full control, and the AI/ML capability exists. Expect the build column's costs: high infrastructure, development, expertise, and operations — and don't let data prep sneak up on you even here. <strong>Router design:</strong> register the deployed models in Foundry's model router and define the strategy as hybrid cost/performance. <em>Static</em> rules route simple intents (quote-status lookups, FAQ) to an SLM and complex pricing reasoning to the large model; a <em>fallback</em> rule protects the quoting flow during peak season by failing over to a backup deployment; <em>weighted</em> routing (10% → ramp) governs every future model upgrade; <em>version-based</em> routing keeps the canary cohort on experimental versions while production stays on latest stable. Monitor latency, cost, accuracy, and usage distribution — then tune. [<a href="https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/model-router">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> For the quoting build, an engineer proposes fine-tuning an SLM to classify inbound quote requests by intent — 2 million classifications per day — arguing "a small model will also be safer, so compliance will sign off faster." Evaluate the proposal.</p>
+<details><summary>Your call?</summary>
+<p><strong>The economics may well justify it; the safety argument does not.</strong> Intent classification at 2M requests/day is a legitimate SLM case: a narrow, well-bounded task where latency and cost per request at volume dominate, and a customized SLM can undercut a frontier model's cost per 1,000 requests by a wide margin. But first run the checklist — does prompt engineering or retrieval tuning over a catalog model already hit the accuracy bar? Fine-tune only with demonstrated residual inaccuracy. And kill the misconception in the design doc: <strong>SLMs are not inherently safer and don't reduce misinformation by default</strong> — compliance sign-off still requires the data curation, safety tuning, and guardrail evidence any model would. Judge the result with the SLM Success Scorecard: task accuracy, latency, cost per 1,000 requests, safety incident rate, drift — then wire it in behind the router with a static rule (task = classification → SLM) and a fallback to the larger model. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+The router and model-choice sections are a direct down payment on AI-103. Its Plan domain examines <em>"Choose an appropriate model for each task (LLMs, small language models, multimodal models)"</em> and <em>"Manage quotas, scaling, rate limits, cost footprints for model and agent workloads"</em>; its Optimize domain adds <em>"Orchestrate multiple models, flows, or hybrid LLM + rules engines."</em> Same concepts — routing rules, SLM economics, cost per 1,000 requests — different altitude. AB-100 asks you to <em>judge</em>: which rule type fits the rollout, is a custom SLM justified, does the business case survive a sensitivity band. AI-103 asks you to <em>implement</em>: configure the router and failover in Foundry, enforce rate limits and cost controls, and wire hybrid LLM + rules orchestration that actually runs. Learn the four rule types and the justification sequence now; the hands-on configuration reps land right after AB-100.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now build a defensible ROI case from raw inputs — benefit formula, net, ROI%, payback, sensitivity bands — price any option across the five TCO drivers, call build/buy/extend with triggers, and design a model-routing strategy that keeps the economics true in production.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/training/modules/evaluate-costs-benefits-ai-powered-business-solution/">Evaluate costs and benefits of AI-powered business solutions</a> (~40 min) — the full seven-unit module this lesson compresses, including the ROI worksheet walkthroughs and the model router unit.
+</div>
+
+<div class="teacher">
+Which piece resisted — the payback formula's one-time-versus-run-cost split, the extend row's high data-prep cell, or the SLM justification sequence? Push back; the numbers are where AB-100 separates architects who present from architects who defend, and your questions set the agenda for lesson 0005 (Copilot Studio core).
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0004 · Prev: <a href="../lessons/0003-ai-strategy-caf-lifecycle-coe.html">lesson 0003</a> · Glossary: <a href="../reference/glossary.html">economics &amp; routing terms</a> · Next: <a href="../lessons/0005-copilot-studio-orchestration-knowledge.html">lesson 0005 Copilot Studio core</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

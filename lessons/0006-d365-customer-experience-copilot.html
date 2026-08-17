@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0006 — Copilot design in Dynamics 365 customer experience apps</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Copilot design in D365 customer experience</h1>
+<p class="subtitle">Business terms, summary formats, Sales connectors, and Contact Center channels — the Design domain's D365 surface</p>
+
+<p>Lesson 6 of your AB-100 course. Dynamics 365 is your least-covered platform, so this lesson works definitions before judgments: first the vocabulary Copilot reads (<em>business terms</em>), then the formats it writes, the four dials you can turn, the connector mechanics the exam quotes verbatim, and finally the per-channel design surface in Contact Center. Everything here is rung-1 work from lesson 1 — <em>configuring</em> a prebuilt Copilot — but the configuration surface is deep enough to fill an exam domain. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall so far</span>
+<p>Don't scroll back to earlier lessons. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> (Lesson 1) Contact-center reps need case summaries, conversation recaps, and next-step suggestions inside the Dynamics 365 Customer Service workspace. Which rung of the ladder — and what does "design" consist of at that rung?</p>
+<details><summary>Reveal</summary>
+<p><strong>Configure the prebuilt Copilot in Dynamics 365 Customer Service</strong> — SaaS-first, the top rung. The design work is configuration, not construction: business terms, field mapping, summary formats, data scope, and surfaces. This lesson is that configuration surface, expanded.</p>
+</details>
+<p><strong>2.</strong> (Lesson 2) Two reps ask the same agent the same question; one answer cites the best document, the other never saw it — and no one gets an error. Which grounding dimension failed, and how do you detect it?</p>
+<details><summary>Reveal</summary>
+<p><strong>Availability.</strong> Retrieval is permission-trimmed per user at query time, so the failure is silent — the agent just answers from a poorer evidence base. You detect it by testing retrieval as personas, not as admin, and you fix it at the permission layer. The same instinct returns today as "expose only the attributes the task needs."</p>
+</details>
+<p><strong>3.</strong> (Lesson 5) Under generative orchestration, how does a Copilot Studio agent decide what runs in a single turn — and what is the ceiling on unstructured sources searched in one retrieval?</p>
+<details><summary>Reveal</summary>
+<p>It selects topics, agents, and tools <em>by their descriptions</em> and can combine topics + tools + knowledge in one turn, with knowledge searched proactively rather than as fallback. The ceiling: at most <strong>five unstructured sources</strong> in simultaneous retrieval (and 500 knowledge objects per agent in total).</p>
+</details>
+</div>
+
+<h2>Where Copilot lives in the D365 CX apps</h2>
+
+<p>Copilot in Dynamics 365 Customer Service is enabled in the <strong>Customer Service admin center &gt; Copilot</strong>. The features you switch on: <strong>conversation summaries, case summaries, draft emails, knowledge suggestions, and real-time assist</strong>. Before any of it works, four prerequisites must hold: <strong>licensing</strong>, <strong>security roles</strong>, the <strong>Customer Service workspace</strong>, and <strong>grounding data</strong> worth reading. An exam stem that says "users can't see Copilot" is often a prerequisite question in disguise — check licensing and security roles before touching configuration. [<a href="https://learn.microsoft.com/en-us/training/modules/configure-copilot/">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>]</p>
+
+<h2>Business terms: the vocabulary Copilot reads</h2>
+
+<p><strong>Business terms</strong> are your organization's standardized vocabulary, stored in <strong>Dataverse fields, option sets, and classification metadata</strong>. Copilot reads them when it produces summaries and recommendations — which means every inconsistency in your vocabulary leaks straight into the AI's output. The problem business terms solve: <strong>vague, inconsistent summaries cause agents to lose trust</strong> in Copilot, and a Copilot that agents double-check against the raw transcript is negative value. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>, <a href="https://learn.microsoft.com/en-us/dynamics365/guidance/business-processes/glossary">source</a>]</p>
+
+<table>
+  <tr><th>Standardize</th><th>Examples</th></tr>
+  <tr><td><strong>Product names</strong></td><td>The official names Copilot should use — not the three nicknames support teams invented</td></tr>
+  <tr><td><strong>Service categories</strong></td><td>The canonical category list summaries should draw from</td></tr>
+  <tr><td><strong>Internal terminology</strong></td><td>SLA tiers, channel names</td></tr>
+  <tr><td><strong>Department names</strong></td><td>Consistent org references in summaries and recommendations</td></tr>
+  <tr><td><strong>Case classification &amp; outcome terms</strong></td><td>The classification values and resolution labels Copilot propagates</td></tr>
+</table>
+
+<p><strong>Managing summary fields.</strong> You control which fields Copilot's summaries read — include or exclude fields, and map custom fields into the summary. The canonical example: mapping a custom <strong>"Issue Type"</strong> field so summaries classify cases in your terms. The exam-critical failure mode is <strong>mis-mapping</strong>: wire the field wrong and you get <strong>misinterpreted categories, outdated terminology, and wrong next steps</strong> — that exact triad. When a scenario shows those three symptoms after a field change, the answer is the summary field mapping, not the model. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>]</p>
+
+<p>Best practices: consistent naming across departments; avoid obscure abbreviations; align terms with the CRM classification fields; review terms regularly as the business evolves; make terms reflect customer language, not internal shorthand; and assign ownership per department so the vocabulary has a maintainer rather than a committee.</p>
+
+<h2>Conversation summary formats: paragraph vs structured</h2>
+
+<table>
+  <tr><th></th><th>Paragraph</th><th>Structured</th></tr>
+  <tr><td><strong>What it is</strong></td><td>A narrative prose summary</td><td>Predefined sections: <strong>Customer Issue, Actions Taken, Pending Items, Next Steps, Resolution Status</strong></td></tr>
+  <tr><td><strong>Choose when</strong></td><td>Quick escalations — a human needs the story fast</td><td>Documentation standards, regulated industries, consistency across every record</td></tr>
+</table>
+
+<p>Format is <em>how the summary is written</em>; surfacing is <em>who sees it where</em>. Outputs can be surfaced on <strong>custom case forms, agent dashboards, and role-specific forms</strong> — Tier 1 agents, escalation agents, and supervisors each get a view matched to their job. The exam separates these two decisions: a scenario that needs identical sections on every record is a format question (structured); a scenario that needs supervisors to see different fields is a surfacing question (role-specific forms). [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>]</p>
+
+<h2>The four customization areas</h2>
+
+<p>Every Copilot-in-D365 design decision lands in one of four areas. Learn the table cold — "which customization area solves X" is a direct exam pattern. [<a href="https://learn.microsoft.com/en-us/dynamics365/sales/extend-copilot-chat">source</a>]</p>
+
+<table>
+  <tr><th>Area</th><th>What you control</th><th>The design question it answers</th></tr>
+  <tr><td><strong>Business terms</strong></td><td>Domain language</td><td>Which official names and classifications appear in summaries?</td></tr>
+  <tr><td><strong>Prompt/output</strong></td><td>Tone, structure, required fields, sensitive terms to avoid</td><td>What must every output contain — and what must it never say?</td></tr>
+  <tr><td><strong>Data scope</strong></td><td>Case fields, CRM entities, knowledge sources, timeline elements</td><td>Which records and sources is Copilot allowed to draw on?</td></tr>
+  <tr><td><strong>Surface integration</strong></td><td>Case forms, conversation windows, timelines, knowledge views, dashboards</td><td>Where does each output appear, and for which role?</td></tr>
+</table>
+
+<p>Best practices that govern all four: <strong>start with agent workflows</strong> (design from what agents actually do, not from what the settings page offers); keep terms consistent; review outputs for tone, accuracy, and brand; <strong>limit data scope</strong> to what the task needs; update prompts as strategy evolves; and keep <strong>human oversight of AI content</strong> before it reaches records or customers.</p>
+
+<h2>Custom connectors for Copilot in D365 Sales</h2>
+
+<p>A custom connector bridges an <strong>external API ↔ Dynamics 365 Sales ↔ Copilot Studio actions</strong> (production-ready preview). The mechanics below are the most exam-quoted facts in this lesson — treat them as memorization-grade. [<a href="https://learn.microsoft.com/en-us/microsoft-sales-copilot/custom-connector-action">source</a>]</p>
+
+<p><strong>The environment rule.</strong> The connector <strong>must be created in an environment with Dynamics 365 apps enabled</strong>. The <strong>default environment is not supported</strong>. A connector built in the default environment is simply unusable for this scenario — no setting fixes it after the fact.</p>
+
+<table>
+  <tr><th>Step</th><th>Where</th><th>What you provide</th></tr>
+  <tr><td>1. Build the connector</td><td>Power Apps / Power Automate</td><td>API host, base URL, security settings</td></tr>
+  <tr><td>2. Define operations</td><td>The connector definition</td><td>An uploaded <strong>OpenAPI definition</strong></td></tr>
+  <tr><td>3. Wire authentication</td><td>Microsoft Entra ID</td><td><strong>OAuth 2.0 + two app registrations</strong>; set <code>Enable onbehalfOf login = true</code> so plugins get <strong>OBO tokens</strong> — the backend receives Entra tokens as the calling seller</td></tr>
+  <tr><td>4. Create the action</td><td>Copilot Studio</td><td>A Copilot action from the connector; configure its data</td></tr>
+  <tr><td>5. Publish</td><td>Copilot Studio</td><td>Publish the action</td></tr>
+  <tr><td>6. Enable for users</td><td>Admin</td><td>Admin enables the action for Sales users</td></tr>
+</table>
+
+<p><strong>Why two app registrations?</strong> The on-behalf-of flow propagates the calling user's identity end to end: the seller's permissions reach the external API, so the connector acts <em>as the seller</em>, not as an app identity. That is the OBO pattern from your glossary, delivered here through a pair of Entra app registrations with <code>Enable onbehalfOf login</code> switched on. The exam will describe per-user delegation to an external API and ask what the auth setup requires — this is it.</p>
+
+<p><strong>The 7-day propagation gotcha.</strong> After publish, actions <strong>may take up to 7 days to appear</strong> for Sales users. Having users <strong>sign out and back in accelerates</strong> availability. So "published Monday, invisible Wednesday" is expected behavior — sign out/in first, and only treat it as a defect after the 7-day window passes.</p>
+
+<p><strong>Governance.</strong> Review third-party terms and privacy implications before connecting — the connector makes external data accessible inside Microsoft 365 experiences. Optionally pursue Microsoft <strong>certification</strong> for org-wide availability of the connector.</p>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory: <strong>(1)</strong> name the four Copilot customization areas; <strong>(2)</strong> reproduce the connector chain — build in the right environment, define via OpenAPI, wire auth, then the publish sequence through Copilot Studio to the admin; <strong>(3)</strong> state the two authentication facts (how many app registrations, and which setting enables OBO) and the propagation window. Scroll up and check — anything you missed is exactly what the exam will ask.
+</div>
+
+<h2>Designing agents for D365 Contact Center</h2>
+
+<p>Contact Center design is per-channel: each channel gets its own AI capabilities, and choosing <em>which capability fits which channel</em> is the tested judgment. [<a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/administer/configure-copilot-features">source</a>]</p>
+
+<table>
+  <tr><th>Channel</th><th>AI capabilities</th></tr>
+  <tr><td><strong>Voice</strong></td><td>Real-time summarization, transcription, intent extraction</td></tr>
+  <tr><td><strong>Live Chat</strong></td><td>Suggested replies, knowledge retrieval, escalation triggers</td></tr>
+  <tr><td><strong>Digital Messaging (SMS/WhatsApp)</strong></td><td>Conversational flows, routing, sentiment</td></tr>
+  <tr><td><strong>Omnichannel widget</strong></td><td>Embedded assistant in the agent experience</td></tr>
+</table>
+
+<h3>Agent context is structured data — expose it least-privilege</h3>
+
+<p>The agent's context is not a document; it is <strong>structured data</strong>: customer identity, case history, channel, transcript, routing queues and priority, and skills. The entity types are <strong>Customer, Case, Product, Subscription</strong>; example fields include <code>CaseID</code>, <code>CustomerType</code>, <code>Channel</code>, <code>IssueCategory</code>, <code>SentimentScore</code>. The design rule: <strong>expose only the attributes the task needs</strong>. Every extra attribute costs you on three axes — <strong>accuracy</strong> (the model weighs irrelevant fields), <strong>noise</strong> (longer, muddier context), and <strong>privacy</strong> (data the agent never needed is data it can leak). This is lesson 2's least-privilege instinct applied to context design. [<a href="https://learn.microsoft.com/en-us/dynamics365/customer-service/develop/enable-bot-context">source</a>]</p>
+
+<h3>Features, enablement, and guardrails</h3>
+
+<p>Copilot features in Contact Center: <strong>conversation summaries, suggested actions, knowledge retrieval, customer insights, automated drafting</strong>. Enablement is two-dimensional — <strong>per environment</strong> and <strong>per user role</strong>: you decide which environments get Copilot and which roles see which features. Design principles: maintain <strong>omnichannel awareness</strong> (the agent knows the channel it's serving); align capabilities to <strong>workstreams</strong> (voice, messaging, persistent chat); set <strong>guardrails</strong> — no unsupported actions, safe language, explicit escalation rules; and keep data <strong>least-privilege</strong> throughout. [<a href="https://learn.microsoft.com/en-us/dynamics365/contact-center/administer/configure-copilot-features">source</a>]</p>
+
+<h2>Voice mode and IVR design</h2>
+
+<p>Voice is the channel where conversational design rules have teeth — a chat user can skim a long answer, a caller cannot. Use cases: <strong>customer-service IVR</strong>, <strong>field technician support</strong>, <strong>routing</strong>, <strong>triage</strong>, and <strong>self-service</strong> (HR/IT, facilities). [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture-overview">source</a>]</p>
+
+<p>The design rules — each one is a quiz distractor waiting to be violated:</p>
+
+<ul>
+  <li><strong>Short, clear phrasing</strong> — callers can't reread; every extra sentence is cognitive load.</li>
+  <li><strong>No long multi-sentence responses</strong> — break information into turns; never recite paragraphs.</li>
+  <li><strong>Confirmation steps</strong> — before acting, play back what you heard ("You'd like to move the appointment to Friday — is that right?").</li>
+  <li><strong>Design for interruptions and backtracking</strong> — callers barge in and change their minds; the flow must survive both.</li>
+  <li><strong>Confidence checks before actions</strong> — low confidence means clarify or escalate, never guess-and-execute.</li>
+</ul>
+
+<p>The canonical voice flow: <strong>speak → interpret → confirm/clarify → execute → concise spoken output</strong>. Note what is <em>not</em> in this lesson: reasoning modes. Standard vs deep reasoning was covered in lesson 5 and applies here unchanged — voice design is about the conversational contract above, not the reasoning tier underneath it.</p>
+
+<h2>Where this sits: the D365 Customer Service AI capability map</h2>
+
+<p>Context you need for orientation — deep prebuilt-agent orchestration is lesson 0008's job. D365 Customer Service offers <strong>three AI capability types</strong>: [<a href="https://learn.microsoft.com/en-us/training/modules/orchestrate-configuration-prebuilt-agents-apps/">source</a>]</p>
+
+<table>
+  <tr><th>Capability type</th><th>What it is</th></tr>
+  <tr><td><strong>Agent hub</strong></td><td>The admin/supervisor hub to adopt autonomous agents safely, monitor impact, and make responsible decisions</td></tr>
+  <tr><td><strong>Autonomous service agents</strong></td><td><strong>Customer Intent Agent</strong> (discovers intents from past and current cases and conversations); <strong>Case Management Agent</strong> (automates the case lifecycle: create, update, resolve, close); <strong>Customer Knowledge Management Agent</strong>; <strong>Quality Evaluation Agent</strong></td></tr>
+  <tr><td><strong>Copilot in Contact Center</strong></td><td>Real-time assistance — ask questions, compose email, summarize case or conversation; embedded or standalone</td></tr>
+</table>
+
+<p>The configuration workflows for the M365-facing siblings follow the same shape. <strong>Copilot for Sales</strong>: enable in M365 + D365 → connect the CRM via approved connectors → map fields for grounding consistency → apply least-privilege permissions → configure content sources (email summarization, opportunity review, proposal drafting, meeting prep). <strong>Copilot for Service</strong>: connect the case engine → validate knowledge-base repositories → enable Copilot actions (summarization, knowledge lookup, guided resolution) → Power Automate for escalation, routing, approvals → role-based access for sensitive actions. KPIs to recognize (not memorize): Sales — prep-time reduction, lead→opportunity speed, proposal consistency; Service — handle/resolution time, first-contact resolution, knowledge-base accuracy. [<a href="https://learn.microsoft.com/en-us/training/modules/configure-copilot/">source</a>]</p>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">1. A regulated service org must produce audit-ready conversation records with identical sections on every escalation. Which summary format should you configure?</p>
+  <button class="opt" data-key="a">Paragraph format, surfaced on role-specific case forms</button>
+  <button class="opt" data-key="b">Structured format, with the five predefined sections</button>
+  <button class="opt" data-key="c">Paragraph format, with sensitive terms excluded via prompts</button>
+  <button class="opt" data-key="d">Structured format, restricted to supervisor dashboards only</button>
+  <p class="why">Documentation standards and regulated industries are the stated trigger for the structured format — Customer Issue, Actions Taken, Pending Items, Next Steps, Resolution Status. Options a and c describe the narrative format; d conflates surfacing (who sees it) with format (how it's written), and restricting to supervisors doesn't make records audit-ready.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">2. Right after a custom "Issue Type" field was wired into Copilot's summaries, agents report misinterpreted categories, outdated terminology, and wrong next steps. Most likely cause?</p>
+  <button class="opt" data-key="a">The summary data scope now includes too many case fields</button>
+  <button class="opt" data-key="b">The structured summary format omits the required sections</button>
+  <button class="opt" data-key="c">The custom field was mis-mapped in the summary settings</button>
+  <button class="opt" data-key="d">The prompt output still lists outdated sensitive terms</button>
+  <p class="why">Misinterpreted categories, outdated terminology, and wrong next steps are the documented triad of a mis-mapped summary field — and the symptom appeared immediately after the field was wired in. Data scope that is merely broad would add noise, not systematically wrong categories.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">3. Leadership complains that Copilot's case summaries draw on fields and timeline entries the service team considers noise. Which customization area fixes this?</p>
+  <button class="opt" data-key="a">Data scope — which fields, entities, and sources count</button>
+  <button class="opt" data-key="b">Business terms — which vocabulary the summaries use</button>
+  <button class="opt" data-key="c">Prompt output — the tone, structure, and required fields</button>
+  <button class="opt" data-key="d">Surface integration — where the summaries appear</button>
+  <p class="why">Case fields, CRM entities, knowledge sources, and timeline elements are the contents of the data-scope dial. Business terms would fix wrong names, prompt output would fix wrong shape, surface integration would fix wrong placement — none of them removes noisy inputs.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">4. A maker builds a custom connector for Copilot in Dynamics 365 Sales inside the tenant's default environment, and it cannot be used. Why?</p>
+  <button class="opt" data-key="a">Default environments lack the required Copilot licensing</button>
+  <button class="opt" data-key="b">The connector needs an OpenAPI definition uploaded first</button>
+  <button class="opt" data-key="c">Custom connectors require certification before any environment</button>
+  <button class="opt" data-key="d">Connectors require an environment with Dynamics 365 apps</button>
+  <p class="why">The connector must be created in an environment with Dynamics 365 apps enabled, and the default environment is explicitly not supported — it has to be rebuilt in the right environment. Certification is optional (for org-wide availability), and an OpenAPI definition is a build step, not the environment defect described.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">5. Sellers must act on an external API as themselves through a Copilot in Sales plugin. Which authentication setup is required?</p>
+  <button class="opt" data-key="a">OAuth 2.0 with Entra ID, two app registrations, on-behalf-of</button>
+  <button class="opt" data-key="b">OAuth 2.0 with Entra ID, one app registration, no delegation</button>
+  <button class="opt" data-key="c">An API key shared with sellers, rotated quarterly by admins</button>
+  <button class="opt" data-key="d">Basic auth per seller, with secrets stored inside Dataverse</button>
+  <p class="why">"As themselves" demands per-user delegation: OAuth 2.0 + Microsoft Entra ID with two app registrations and <code>Enable onbehalfOf login = true</code>, so the backend receives Entra tokens for the calling seller via OBO. One registration without delegation makes the app act as itself; keys and basic auth carry no per-user identity.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">6. An admin publishes a Copilot Studio action for Sales on Monday. By Wednesday sellers still cannot see it. What should you check first?</p>
+  <button class="opt" data-key="a">Whether the OpenAPI definition needs re-uploading</button>
+  <button class="opt" data-key="b">Whether sellers have signed out and back in</button>
+  <button class="opt" data-key="c">Whether the connector lives in the default environment</button>
+  <button class="opt" data-key="d">Whether the action requires administrator recertification</button>
+  <p class="why">Actions can take up to 7 days to appear after publish, and signing out/in accelerates availability — so day two is inside the normal window and the sign-out check is the first move. Treat it as a defect only after the 7-day window passes.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">7. A contact center wants real-time transcription, live summarization, and intent extraction during phone calls. Which channel's AI capabilities deliver this?</p>
+  <button class="opt" data-key="a">The live chat channel's suggested-reply capabilities</button>
+  <button class="opt" data-key="b">The digital messaging channel's routing capabilities</button>
+  <button class="opt" data-key="c">The omnichannel widget's embedded assistant capabilities</button>
+  <button class="opt" data-key="d">The voice channel's real-time assistance capabilities</button>
+  <p class="why">Real-time summarization, transcription, and intent extraction are the voice channel's stated capability set. Live chat owns suggested replies and escalation triggers; digital messaging owns conversational flows, routing, and sentiment; the widget is the embedded assistant surface, not the phone-call pipeline.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">8. You are designing agent context for a chat agent that only verifies subscription status. What should the context include?</p>
+  <button class="opt" data-key="a">The full customer record, for maximum answer accuracy</button>
+  <button class="opt" data-key="b">The complete case history across every channel</button>
+  <button class="opt" data-key="c">Only the attributes the verification task needs</button>
+  <button class="opt" data-key="d">All routing queues, skills, and transcript data</button>
+  <p class="why">Expose only needed attributes — every extra field degrades accuracy (the model weighs irrelevant data), adds noise, and widens the privacy surface. Full records and complete histories are the over-exposure failure mode this rule exists to prevent.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">9. A voice IVR greets callers with a three-sentence recital of every menu option before accepting input. Which design rule does this violate?</p>
+  <button class="opt" data-key="a">Confirm every action before executing it</button>
+  <button class="opt" data-key="b">Keep phrasing short and clear for callers</button>
+  <button class="opt" data-key="c">Check confidence levels before taking actions</button>
+  <button class="opt" data-key="d">Support caller interruptions and backtracking gracefully</button>
+  <p class="why">Short, clear phrasing — and its corollary, no long multi-sentence responses — is the rule a spoken wall of text breaks; callers can't skim. Confirmation and confidence checks govern actions (none taken here), and interruption support is about surviving barge-in, not about greeting length.</p>
+</div>
+
+<h2>Apply it: three D365 CX designs</h2>
+
+<p>Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> A health insurer (regulated, 400-seat service org) is enabling Copilot in D365 Customer Service. Summaries will feed audit-reviewed case records; Tier 1 agents, escalation agents, and supervisors need different views; leadership wants tight control over which data Copilot may read. Design the configuration.</p>
+<details><summary>Your design?</summary>
+<p><strong>Prereqs first:</strong> licensing, security roles, Customer Service workspace, grounding data — then enable features in Customer Service admin center &gt; Copilot. <strong>Business terms:</strong> standardize plan/product names, service categories, SLA tiers, channel names, and case classification/outcome terms; align them with the CRM classification fields; avoid obscure abbreviations; assign ownership per department and review regularly. <strong>Summary fields:</strong> include/exclude deliberately and map any custom fields (like "Issue Type") correctly — mis-mapping is what produces misinterpreted categories and wrong next steps. <strong>Format:</strong> structured — audit-ready records with identical sections (Customer Issue, Actions Taken, Pending Items, Next Steps, Resolution Status) are the regulated-industry pattern. <strong>Data scope:</strong> limited to the case fields, entities, and knowledge sources the workflows need. <strong>Prompt/output:</strong> required fields per summary plus sensitive terms to avoid. <strong>Surface integration:</strong> role-specific forms for Tier 1, escalation, and supervisors. <strong>Oversight:</strong> human review of AI content before it enters the audited record. [<a href="https://learn.microsoft.com/en-us/training/modules/design-ai-agents-business-solutions/3-design-business-terms-copilot-dynamics-365-apps-customer-experience-service">source</a>, <a href="https://learn.microsoft.com/en-us/dynamics365/sales/extend-copilot-chat">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> A sales org's architect reports: "We built the connector in Power Apps last week, published the Copilot Studio action yesterday, and no seller can see it. Also, our security review wants to know how the external API receives user identity." Give an ordered answer.</p>
+<details><summary>Your answer?</summary>
+<p>Work the chain in order. <strong>(1) Environment:</strong> confirm the connector was created in an environment with Dynamics 365 apps enabled — if it was built in the default environment, it must be rebuilt; nothing else will fix it. <strong>(2) Auth:</strong> OAuth 2.0 + Microsoft Entra ID with <strong>two app registrations</strong> and <code>Enable onbehalfOf login = true</code> — that is how the API receives Entra tokens as the calling seller (OBO delegation), which answers the security reviewer. <strong>(3) Publish chain:</strong> Copilot Studio action created → data configured → published → <strong>admin enabled it for Sales users</strong> — the last step is often the missing one. <strong>(4) Timing:</strong> published <em>yesterday</em> is well inside the up-to-7-day propagation window — have sellers sign out and back in, and only escalate after 7 days. <strong>(5) Governance:</strong> confirm the third-party terms/privacy review happened, since connector data becomes accessible inside M365 experiences. [<a href="https://learn.microsoft.com/en-us/microsoft-sales-copilot/custom-connector-action">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> A contact center wants a voice agent that schedules service appointments and routes callers, with human agents available for anything sensitive. Design the voice experience and the context the agent receives.</p>
+<details><summary>Your design?</summary>
+<p><strong>Use case fit:</strong> customer-service IVR plus routing — squarely the voice pattern. <strong>Conversation flow:</strong> speak → interpret → confirm/clarify → execute → concise spoken output. <strong>Design rules:</strong> short, clear prompts; no long multi-sentence responses; a confirmation step before booking anything ("Friday at 2 pm — shall I confirm?"); design for interruptions and backtracking (callers change their minds mid-sentence); confidence checks before actions — low confidence triggers clarification, not execution. <strong>Escalation:</strong> an explicit rule handing sensitive requests or repeated clarification failures to a human agent. <strong>Context:</strong> least-privilege — Customer identity and the Subscription/appointment fields the scheduling task needs (<code>CaseID</code>, <code>CustomerType</code>, <code>Channel</code>), not full case history or marketing data; every extra attribute costs accuracy, adds noise, and widens privacy exposure. <strong>Workstream alignment:</strong> configure the capabilities on the voice workstream, with omnichannel awareness so the agent knows it's on a call, not in chat. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/">source</a>, <a href="https://learn.microsoft.com/en-us/dynamics365/customer-service/develop/enable-bot-context">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+Two pieces of this lesson transfer directly to AI-103. <strong>(a) The voice work:</strong> the same skills appear under "Implement speech solutions" — speech-to-text and text-to-speech workflows for agentic interactions, speech as an agent modality (including custom speech models), and multimodal reasoning from audio inputs. Where AB-100 asks <em>whether</em> voice fits and how the conversation should be shaped, AI-103 asks you to <em>build</em> the speech pipeline in Foundry. <strong>(b) The connector identity pattern:</strong> two app registrations with on-behalf-of delegation is the design-level cousin of AI-103's security configuration skills — managed identity, keyless credentials, and role policies. AB-100 tests whether you choose per-user delegation; AI-103 tests whether you implement credential-less, least-privilege identity. Learn the D365 mechanics now as design facts; the Foundry implementations arrive right after the exam.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now walk into any Dynamics 365 customer-experience scenario and specify the Copilot configuration — vocabulary, format, scope, surface, connector, channel — including the exact mechanics (D365-enabled environment, two app registrations with OBO, seven-day propagation) that the exam quotes verbatim.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/microsoft-sales-copilot/custom-connector-action">Custom connector actions for Copilot in Dynamics 365 Sales</a> (~15 min) — the exam-critical mechanics this lesson compresses: the D365-enabled environment rule, the two-app-registration OBO setup, and the 7-day propagation window.
+</div>
+
+<div class="teacher">
+Which felt most alien — the business-terms machinery, the two-app-registration auth dance, or the per-channel capability split? Push back on any of it; your questions set the agenda for lesson 0007, where the extensibility surface goes deeper.
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0006 · Prev: <a href="../lessons/0005-copilot-studio-orchestration-knowledge.html">lesson 0005</a> · Glossary: <a href="../reference/glossary.html">D365 Copilot terms</a> · Next: <a href="../lessons/0007-extensibility-mcp-computer-use-m365.html">lesson 0007 extensibility</a>
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0007 — Extensibility: MCP, Computer Use, and agents in Microsoft 365</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+
+<h1>Designing extensibility across the agent platforms</h1>
+<p class="subtitle">Custom models, M365 agents, Copilot Studio's four layers, MCP, and Computer Use — how far each platform stretches</p>
+
+<p>Lesson 7 of your AB-100 course, and the second half of the Design domain. Lessons 5–6 went deep inside two platforms — Copilot Studio's internals, the D365 Copilot surface. This lesson maps the boundaries <em>between</em> platforms: <strong>extensibility is the question of how far each rung of lesson 1's ladder can stretch before you must drop to the next one down.</strong> Every rung has a sanctioned stretch — declarative agents extend M365 Copilot, four layers extend Copilot Studio, MCP extends Dynamics 365 F&amp;O, Computer Use extends anything with a UI — and the Design domain tests whether you pick the stretch that stays highest on the ladder. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/">source</a>]</p>
+
+<div class="recall">
+<span class="boxlabel">Recall so far</span>
+<p>Don't scroll back to earlier lessons. Answer each from memory, then open the reveal.</p>
+<p><strong>1.</strong> (Lesson 1) State the SaaS-first principle, and name the condition that justifies climbing from "extend Microsoft 365 Copilot" up to "build in Copilot Studio."</p>
+<details><summary>Reveal</summary>
+<p>Always open by asking whether a prebuilt SaaS agent meets the functional requirements — if yes, stop. You climb to Copilot Studio when you need a <em>purpose-built</em> agent — business process automation, autonomous triggers, agent flows, publishing to Teams/web/D365 channels — while still wanting a governed, low-code loop business users can co-own. This lesson is about where each of those rungs <em>ends</em>.</p>
+</details>
+<p><strong>2.</strong> (Lesson 5) Knowledge can attach at three levels in Copilot Studio. When node-level and agent-level sources conflict, which wins — and what are the two hard knowledge limits?</p>
+<details><summary>Reveal</summary>
+<p>Node-level sources are prioritized over agent-level sources. The limits: <strong>500 knowledge objects per agent</strong>, and at most <strong>five unstructured sources in simultaneous retrieval</strong> — attach eight SharePoint sites and any single retrieval still searches only five of them.</p>
+</details>
+<p><strong>3.</strong> (Lesson 6) A Copilot in Sales plugin must call an external API <em>as the calling seller</em>. What authentication setup is required, and where must the connector be created?</p>
+<details><summary>Reveal</summary>
+<p>OAuth 2.0 with Microsoft Entra ID, <strong>two app registrations</strong>, and <code>Enable onbehalfOf login = true</code> so the backend receives OBO tokens as the seller. The connector must be built in an environment with <strong>Dynamics 365 apps enabled</strong> — the default environment is unsupported. Keep this chain in mind: MCP later this lesson is the same idea (a standardized contract), pointed at context instead of actions.</p>
+</details>
+</div>
+
+<h2>Extensibility means knowing where each rung ends</h2>
+
+<p>Lesson 1 gave you the ladder; this lesson gives you the edges. The extend-M365-vs-build-custom decision is the framing every other section hangs on, and Microsoft's comparison matrix is the exam's own vocabulary for it. [<a href="https://learn.microsoft.com/en-us/training/modules/design-overall-ai-strategy-business-solutions/8-determine-build-custom-agents-extend-copilot">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/copilot-declarative-agent-intro/4-when-to-use-declarative-agents">source</a>]</p>
+
+<table>
+  <tr><th>Dimension</th><th>Extend Microsoft 365 Copilot</th><th>Build a custom agent</th></tr>
+  <tr><td><strong>Autonomy</strong></td><td>Low</td><td>High</td></tr>
+  <tr><td><strong>Custom logic</strong></td><td>Limited</td><td>Extensive</td></tr>
+  <tr><td><strong>Data variety</strong></td><td>Microsoft 365 data</td><td>Any data</td></tr>
+  <tr><td><strong>Actions</strong></td><td>Simple</td><td>Complex, multi-step</td></tr>
+  <tr><td><strong>Orchestration</strong></td><td>None</td><td>Full</td></tr>
+  <tr><td><strong>Governance</strong></td><td>Built-in</td><td>Custom</td></tr>
+</table>
+
+<p><strong>Extend when:</strong> core Copilot already does most of the tasks; the workflows are productivity work inside M365 apps; the need is org knowledge plus simple tasks; you want the built-in Responsible AI guardrails; the custom logic is simple. The extension mechanisms are connectors/plugins, org knowledge sources, and document/communication automation. <strong>Build custom when:</strong> specialized workflows beyond Copilot; custom reasoning, multi-step logic, or orchestration; direct system APIs, external apps, or operational autonomy; multi-agent collaboration; execution outside M365. Custom agents earn their cost in case management, field-operations automation, industry verticals, and multi-agent ecosystems. Everything below is the detailed "how" of both columns.</p>
+
+<h2>Custom models in Foundry: the judgment, not the mechanics</h2>
+
+<p>You know Foundry cold, so this section is deliberately compact. AB-100 never asks <em>can you fine-tune</em> — it asks <em>is a custom model justified here</em>, and the justified list reads like a set of exceptions. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/2-design-ai-solutions-custom-models-microsoft-foundry">source</a>, <a href="https://learn.microsoft.com/en-us/training/modules/choose-ai-agent-development-path/">source</a>]</p>
+
+<p><strong>A custom model is justified by:</strong> domain-specific language or reasoning (legal, healthcare, engineering, finance, manufacturing); high-impact decisions (compliance, financial, safety); data sovereignty or governance mandates; unique workflows and personalization beyond what prebuilt copilots offer; and cost optimization of high-volume inference via small specialized models. If a scenario names none of these, the correct answer is a catalog model with grounding and instructions.</p>
+
+<table>
+  <tr><th>Dimension</th><th>Standard Copilot / catalog model</th><th>Custom Foundry model</th></tr>
+  <tr><td><strong>Domain specificity</strong></td><td>Low</td><td>High</td></tr>
+  <tr><td><strong>Compliance demands</strong></td><td>Moderate</td><td>High</td></tr>
+  <tr><td><strong>Performance demands</strong></td><td>Moderate</td><td>High</td></tr>
+  <tr><td><strong>Data confidentiality</strong></td><td>Moderate</td><td>Full data control</td></tr>
+  <tr><td><strong>Solution complexity</strong></td><td>Low–medium</td><td>High</td></tr>
+  <tr><td><strong>Inference-cost optimization</strong></td><td>Baseline</td><td>High — small specialized models at volume</td></tr>
+</table>
+
+<p><strong>The design steps, in order:</strong> business objectives (accuracy, time, cost targets) → data assessment (gaps in labeling, quality, diversity; governance permission to train on the data) → select the path (<strong>fine-tune a foundation model</strong> | <strong>train a domain SLM</strong> | <strong>hybrid with prebuilt copilots</strong>) → enterprise integration (D365, Azure Functions/Logic Apps, Foundry agent workflows, AI Search, automation pipelines) → validate and evaluate (scenario evals, safety/bias, stress/latency/scale, ROI).</p>
+
+<p><strong>Operationalization is what makes this the bottom rung.</strong> A custom model means you own: monitoring and observability (drift, degradation, friction, latency, unexpected outputs); versioning and lifecycle (version trails, update pipelines, rollback); and deployment automation through MLOps/GenAIOps (validations, approvals, environment-specific deploys). The exam framing: prompt engineering and retrieval tuning come first; a custom model is what you build when those demonstrably can't hit the accuracy bar and one of the five justifications applies.</p>
+
+<h2>Agents in Microsoft 365 Copilot</h2>
+
+<p>A <strong>declarative agent</strong> is an M365 Copilot agent defined by instructions + knowledge + actions, running on Copilot's orchestrator and inheriting its guardrails. More generally, a Copilot agent is a modular, instruction-driven AI component scoped to a specific task or workflow: task automation, information retrieval (Graph plus integrated systems), multi-step operations (classification, analysis, routing), and collaboration (drafts, summaries). Agents operate in <strong>Teams, Outlook, Loop, and SharePoint</strong>, and in custom line-of-business apps via extensibility points. [<a href="https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-page">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-365/copilot/extensibility/overview-declarative-agent">source</a>]</p>
+
+<h3>The three-step design framework</h3>
+
+<p><strong>A. Understand the core problem</strong> — the task, the goal, the decisions involved, the systems touched. <strong>B. Define the behavior</strong> — the agent's role, its allowed and disallowed capabilities, guardrails, and escalation conditions. <strong>C. Connect data and tools</strong> — Graph, SharePoint/OneDrive/Teams, connectors and actions, custom APIs — always least-privilege, zero-trust. Notice the shape: problem before behavior, behavior before wiring. A scenario that jumps straight to connectors has skipped the two steps the exam rewards.</p>
+
+<h3>Collaborative patterns for multiple agents</h3>
+
+<table>
+  <tr><th>Pattern</th><th>Shape</th><th>Use when</th></tr>
+  <tr><td><strong>Sequential</strong></td><td>Agent A → Agent B → user review</td><td>Pipeline work that needs a human checkpoint</td></tr>
+  <tr><td><strong>Parallel evaluation</strong></td><td>Agents score independently; results are combined</td><td>You want independent judgments merged into one answer</td></tr>
+  <tr><td><strong>Feedback loop</strong></td><td>Iterate until the output meets the bar</td><td>Drafts that improve over successive passes</td></tr>
+  <tr><td><strong>Orchestrated interaction</strong></td><td>A primary agent delegates by intent or conditions</td><td>Routing work across specialties</td></tr>
+</table>
+
+<p>Whichever pattern you choose: <strong>clear handoff rules and responsibility boundaries</strong> are the design deliverable. An orchestrated agent without explicit delegation conditions is a router with no route table.</p>
+
+<h3>Agent Builder — the easiest declarative path</h3>
+
+<p><strong>Agent Builder</strong> is the guided authoring surface inside Microsoft 365 Copilot: step-by-step configuration, built-in tools, declarative instructions, a testing workspace, and publishing controls. The workflow is worth memorizing as a sequence: <strong>purpose → instructions, tasks, and guardrails → data sources → actions and permissions → test → publish to targeted users/groups</strong>. After publishing, operations are: monitor quality and feedback; update instructions; manage access control; review logs; version the agent; and identify new scenarios. When a scenario describes a business user — not a developer — building an M365 Copilot agent, Agent Builder is the answer. [<a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/agent-builder-build-agents">source</a>]</p>
+
+<h2>The four extensibility layers of Copilot Studio</h2>
+
+<p>Copilot Studio's boundary doesn't break all at once — it stretches through <strong>four layers</strong>, in increasing order of power and cost. The exam's pattern is "which layer solves X," so learn each layer as <em>what it can change, what it can't, and one concrete example</em>. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/">source</a>]</p>
+
+<table>
+  <tr><th>Layer</th><th>What it can change</th><th>What it can't</th><th>Concrete example</th></tr>
+  <tr><td><strong>1. Instruction-level</strong></td><td>Purpose, role/constraints, action patterns, escalation rules — prompt modification without a rebuild</td><td>Add new tools, skills, or data connections — it changes behavior, not capability</td><td>Rewrite escalation rules so billing disputes over $10,000 always route to a human</td></tr>
+  <tr><td><strong>2. Skill/capability</strong></td><td>Retrieval skills (enterprise content), action skills (connectors/custom APIs), multi-step workflows, domain knowledge — modular and reusable</td><td>Reach a system no connector or API can see — skills sit on top of available actions</td><td>Add a reusable refund-lookup action skill backed by a custom API</td></tr>
+  <tr><td><strong>3. Integration</strong></td><td>D365/M365/custom database/LOB retrieval; Power Automate actions; external APIs; published events and commands</td><td>Change the agent's logic itself — it wires systems to the agent, not the reverse</td><td>Connect the agent to F&amp;O vendor records and a Power Automate approval flow</td></tr>
+  <tr><td><strong>4. Pro-code (VS Code)</strong></td><td>Custom agent logic and components, code-based tools/actions, custom transformations and orchestration, source control integration</td><td>Stay in the low-code loop — you now own code, with source control and a dev lifecycle</td><td>Build a custom orchestration component in VS Code, checked into source control</td></tr>
+</table>
+
+<p>Integration-layer design carries its own checklist: governance, least-privilege, standardized commands, and consistent entity mapping across systems. Three architecture patterns sit above the layers: <strong>modular agent architecture</strong> (interchangeable components), <strong>multi-agent collaboration</strong> (research, workflow, and communication agents talking over defined protocols), and <strong>domain-context design</strong> (terminology, rules, access policies, and outcomes per domain).</p>
+
+<p><strong>The three architecture principles</strong> that govern all of this: <strong>fit for purpose</strong>, <strong>operability</strong>, and <strong>trust/traceability/transparency</strong>. They <em>complement — not replace</em> — the Azure Well-Architected Framework, the Power Platform Well-Architected Framework, and NIST. A distractor that says an agent architecture framework substitutes for WAF is wrong on its face. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/determine-fit-for-purpose">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/determine-operability">source</a>, <a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/determine-trust">source</a>]</p>
+
+<h2>MCP: a standardized contract for business context</h2>
+
+<p>The <strong>Model Context Protocol (MCP)</strong> is a standardized contract for <em>what context an agent can access and how to interpret it</em>. The analogy that ties this lesson to lesson 6: MCP is to context what the custom connector's OpenAPI definition is to actions — the shared description both sides build against. In <strong>Dynamics 365 Finance &amp; Operations</strong>, MCP exposes the business semantics themselves: entities, relationships, labels, metadata, and domain objects — customers, vendors, products; workflows, statuses, and approval chains; financial dimensions and ledger models; localization rules. [<a href="https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp">source</a>]</p>
+
+<p><strong>Why it matters:</strong> consistent business semantics across every agent that consumes the contract; grounding in real F&amp;O context, which reduces misinformation; interoperability across multiple apps; explainability and governance; and faster extensibility, because each new agent inherits the semantics instead of relearning them.</p>
+
+<p><strong>Instruction design for an MCP-consuming agent</strong> has five named parts: a purpose statement, a role definition, behavior rules, <em>context consumption logic</em> (how the agent uses the MCP data it's given), and action boundaries.</p>
+
+<h3>The three integration patterns</h3>
+
+<table>
+  <tr><th>Pattern</th><th>What the agent does</th><th>Named examples</th></tr>
+  <tr><td><strong>A. Context-driven reasoning</strong></td><td>Reasons over live business semantics to answer and judge</td><td>Compliance, finance, procurement</td></tr>
+  <tr><td><strong>B. Workflow-integrated agents</strong></td><td>Embedded inside the business process itself</td><td>Approvals, exception escalation, status summaries</td></tr>
+  <tr><td><strong>C. Multi-agent collaboration via shared MCP context</strong></td><td>Several agents interoperate over the same semantics</td><td>HR + Finance + Supply Chain agents</td></tr>
+</table>
+
+<p><strong>Governance:</strong> least-privilege by user identity; <strong>MCP context boundaries</strong> aligned to compliance domains; decision logging; instructions that enforce Responsible AI; and AI CoE ownership. The boundary idea is the one to internalize: the contract defines what each agent may see, and you align those boundaries to the same compliance domains your data governance already uses.</p>
+
+<h2>Computer Use: the last-resort UI bridge</h2>
+
+<p><strong>Computer Use</strong> lets an agent operate a user interface directly: control the mouse and keyboard, navigate websites and desktop apps, read onscreen text and UI elements, run multi-step tasks, and execute across applications. The runtime flow: <strong>request → analyze the UI (vision + reasoning) → build a step plan → act via the Computer Use channel → validate and report</strong>. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/computer-use">source</a>]</p>
+
+<p><strong>The golden rule: use Computer Use only when APIs are unavailable.</strong> It is the bridge of last resort, not a convenience — an exam option that reaches for Computer Use while an API or connector exists is the trap.</p>
+
+<table>
+  <tr><th>Suitable — reach for Computer Use</th><th>Not suitable — do something else</th></tr>
+  <tr><td>No API/connector exists: legacy systems, vendor portals, desktop-only apps</td><td>An API or connector exists — build the connector instead (the golden rule)</td></tr>
+  <tr><td>Repetitive UI-driven tasks: data entry, form submission, copy/paste</td><td>Entering sensitive data — avoid by design</td></tr>
+  <tr><td>Multi-app navigation: portal → CRM, downloading reports</td><td>Unmonitored production use — UI changes break it; you need monitoring and a fallback plan</td></tr>
+  <tr><td>Dynamic pages that need human-like reasoning</td><td></td></tr>
+</table>
+
+<p><strong>Design for variability</strong>, because UIs are not contracts: give clear goal-oriented tasks broken into steps; set context and constraints (allowed apps and sites, data boundaries, prohibited actions, time and retry limits); write <em>descriptive</em> instructions — "click the blue Submit button," not coordinates; <strong>validate after each step</strong>; and fail with graceful errors. Configuration: enable Computer Use in agent settings; configure permissions and allowed apps; add Computer Use actions (click, type, scroll, extract, navigate); pick the reasoning mode (lesson 5's standard/deep choice applies here); and watch/debug runs in the test canvas. <strong>Governance:</strong> least-privilege application access; avoid sensitive data entry; transparency; action logging; and — because UI-change fragility is inherent — monitoring plus a fallback plan.</p>
+
+<div class="recall">
+<span class="boxlabel">Recall before you continue</span>
+Close your scroll position. From memory: <strong>(1)</strong> name the four Copilot Studio extensibility layers in order, with one thing each can change; <strong>(2)</strong> state the Computer Use golden rule and the three conditions that make it suitable; <strong>(3)</strong> name the three MCP integration patterns. Scroll up and check — a layer you can't place is a layer you'll misassign on the exam.
+</div>
+
+<h2>Agents for Teams and SharePoint</h2>
+
+<p>Copilot Studio-built agents publish into the two M365 surfaces where work actually happens. In <strong>Teams</strong>: chat and channel answers, message-triggered workflows, and contextual answers over M365 data. In <strong>SharePoint</strong>: retrieval over site, list, and library content; site-specific Q&amp;A; and content-management help. Grounding in both respects user permissions via <strong>Microsoft Graph</strong> (files, lists, pages) — lesson 2's permission trimming applies unchanged: a user without access simply never grounds on that content, and you test as personas. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/">source</a>]</p>
+
+<p><strong>SharePoint agents</strong> draw knowledge from site pages, document libraries, lists, news, policies, and wikis — and <strong>site context is automatic</strong>: the agent knows which site it belongs to, treats that site as its primary grounding, and adapts to the site's structure. They also assist the <strong>site owner</strong>: drafting pages, managing metadata, accessibility, and organization. <strong>Teams agents</strong> add conversational automation, multi-user collaboration in group conversations with shared knowledge, and task automation — "create a task for this message," "summarize the last 10 messages."</p>
+
+<h3>Optimization guidance</h3>
+
+<ul>
+  <li><strong>Grounding strategy:</strong> SharePoint as the primary source, Graph for cross-tenant reach, well-structured and tagged content.</li>
+  <li><strong>Permissions:</strong> inherit user permissions; app registration plus consent.</li>
+  <li><strong>Prompt/behavior design:</strong> concise answers, clarifying questions, use of metadata.</li>
+  <li><strong>Governance/lifecycle:</strong> version control, usage monitoring, periodic grounding review, AI CoE alignment.</li>
+</ul>
+
+<h3>The four named patterns</h3>
+
+<table>
+  <tr><th>Pattern</th><th>What it does</th></tr>
+  <tr><td><strong>SharePoint knowledge assistant</strong></td><td>Site-scoped Q&amp;A over pages, libraries, and lists</td></tr>
+  <tr><td><strong>Teams project assistant</strong></td><td>Channel answers plus message-triggered task automation</td></tr>
+  <tr><td><strong>Org policy assistant</strong></td><td>Organization-wide policy answers from governed sources</td></tr>
+  <tr><td><strong>Site owner support agent</strong></td><td>Helps owners draft pages, manage metadata, and organize the site</td></tr>
+</table>
+
+<h2>Check yourself</h2>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">1. A marketing team wants an assistant inside Teams and Outlook that summarizes campaign documents from SharePoint, drafts briefs, and handles similar simple tasks — all data lives in Microsoft 365. Best approach?</p>
+  <button class="opt" data-key="a">Extend Microsoft 365 Copilot with a declarative agent</button>
+  <button class="opt" data-key="b">Build a custom Copilot Studio autonomous agent</button>
+  <button class="opt" data-key="c">Build a code-first agent in Microsoft Foundry</button>
+  <button class="opt" data-key="d">Fine-tune a custom model on marketing content</button>
+  <p class="why">Interaction in M365 apps, M365 data, simple actions, no orchestration needs, built-in governance wanted — every row of the comparison matrix lands on "extend." Copilot Studio and Foundry buy autonomy and custom logic the scenario never uses, and a custom model answers a question nobody asked.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">2. An existing service agent works well, but leadership wants escalation rules rewritten so billing disputes over $10,000 always route to a human — no new tools, data, or systems. Which extensibility layer?</p>
+  <button class="opt" data-key="a">The skill/capability layer, adding a new escalation skill</button>
+  <button class="opt" data-key="b">The integration layer, wiring an external approval system</button>
+  <button class="opt" data-key="c">The pro-code layer, writing custom escalation components</button>
+  <button class="opt" data-key="d">The instruction-level layer, modifying rules without rebuild</button>
+  <p class="why">Purpose, role/constraints, action patterns, and escalation rules are exactly the instruction-level layer's remit — prompt modification without a rebuild. A new skill adds capability nobody requested; integration wires external systems; pro-code rewrites logic. Each overshoots a rules-only change.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">3. That same agent must now read vendor records from Dynamics 365 F&amp;O and start a Power Automate approval flow. Which extensibility layer?</p>
+  <button class="opt" data-key="a">The instruction-level layer, refining purpose statements</button>
+  <button class="opt" data-key="b">The skill/capability layer, refining domain knowledge</button>
+  <button class="opt" data-key="c">The integration layer, connecting LOB systems and flows</button>
+  <button class="opt" data-key="d">The pro-code layer, replacing the agent's orchestration</button>
+  <p class="why">D365/M365/LOB retrieval, Power Automate actions, and external APIs are the integration layer's stated remit — with governance, least-privilege, standardized commands, and consistent entity mapping as its design checklist. Instructions can't conjure a connection, and pro-code is premature while connectors and flows suffice.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">4. A utility runs 40 million meter-reading classifications daily. The vocabulary is highly domain-specific, retrieval-tuned catalog models still miss the accuracy bar, and a small specialized model would slash inference cost. Is a custom model justified?</p>
+  <button class="opt" data-key="a">No — keep prompt-engineering the catalog model until it passes</button>
+  <button class="opt" data-key="b">Yes — domain specificity plus inference-cost optimization justify it</button>
+  <button class="opt" data-key="c">No — classification tasks never justify custom models</button>
+  <button class="opt" data-key="d">Yes — but only when hosted on self-managed GPUs</button>
+  <p class="why">Domain-specific language, insufficient off-the-shelf accuracy after tuning, and high-volume inference-cost optimization via a small specialized model are three of the five stated justifications — this scenario clears the bar. Option d confuses hosting topology with the build decision; GPUs and containers are a separate rung with separate triggers.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">5. HR wants an agent answering policy questions in the company's tone. The content is general HR language, and grounding over the policy SharePoint site already returns accurate answers. Right call?</p>
+  <button class="opt" data-key="a">Train a domain SLM on the company's HR policy corpus</button>
+  <button class="opt" data-key="b">Fine-tune a foundation model on past HR tickets</button>
+  <button class="opt" data-key="c">Build a hybrid model mixing prebuilt and custom weights</button>
+  <button class="opt" data-key="d">Use a catalog model with retrieval grounding and instructions</button>
+  <p class="why">General-purpose Q&amp;A with adequate accuracy is the catalog model's stated profile, and tone is an instruction-layer problem, not a training problem. Building a custom model when grounding over a general model already suffices is the classic anti-pattern — you'd inherit evals, drift monitoring, and rollback for nothing.</p>
+</div>
+
+<div class="quiz-q" data-answer="b">
+  <p class="q">6. An F&amp;O agent must run inside the purchase-approval workflow: reading approval chains and financial dimensions, escalating exceptions, and posting status summaries. Which MCP integration pattern?</p>
+  <button class="opt" data-key="a">Context-driven reasoning over live business semantics</button>
+  <button class="opt" data-key="b">Workflow-integrated agents inside the approval process</button>
+  <button class="opt" data-key="c">Multi-agent collaboration via shared MCP context</button>
+  <button class="opt" data-key="d">Instruction-level prompt modification without rebuild</button>
+  <p class="why">Approvals, exception escalation, and status summaries are the workflow-integrated pattern's named examples. Context-driven reasoning fits analysis and judgment calls; multi-agent collaboration fits several agents sharing context across domains. Option d is a Copilot Studio extensibility layer, not an MCP pattern at all.</p>
+</div>
+
+<div class="quiz-q" data-answer="c">
+  <p class="q">7. Every morning, ops staff copy invoice data from a vendor's web portal into the ERP. The portal has no API and no connector. Best approach?</p>
+  <button class="opt" data-key="a">A custom connector wrapping the vendor portal's API</button>
+  <button class="opt" data-key="b">An agent flow with the standard ERP connector</button>
+  <button class="opt" data-key="c">A Computer Use agent driving the portal's UI</button>
+  <button class="opt" data-key="d">An MCP contract exposing the vendor's entities</button>
+  <p class="why">"No API/connector" plus "repetitive UI-driven task" plus "vendor portal" hits all three Computer Use suitability conditions. Option a is the trap — it requires the very API the stem says doesn't exist; the golden rule only licenses Computer Use <em>because</em> that API is missing. The ERP connector reaches the destination but never touches the portal.</p>
+</div>
+
+<div class="quiz-q" data-answer="a">
+  <p class="q">8. A project team wants an agent in its Teams channel that answers from the project's SharePoint site, summarizes the last 10 messages, and creates tasks from messages. Which pattern?</p>
+  <button class="opt" data-key="a">A Teams project assistant in the team's channel</button>
+  <button class="opt" data-key="b">A SharePoint knowledge assistant scoped to the site</button>
+  <button class="opt" data-key="c">A site owner support agent for page drafting</button>
+  <button class="opt" data-key="d">An org policy assistant grounded on policy wikis</button>
+  <p class="why">Channel answers plus message-triggered automation — "summarize the last 10 messages," "create a task for this message" — is the Teams project assistant pattern. The SharePoint knowledge assistant is site-scoped Q&amp;A; the site owner agent drafts and organizes pages; the policy assistant serves org-wide policy content. The surface and trigger decide the pattern.</p>
+</div>
+
+<div class="quiz-q" data-answer="d">
+  <p class="q">9. A business user with no developer background wants to create a declarative Microsoft 365 Copilot agent through guided configuration and publish it to her team. Easiest path?</p>
+  <button class="opt" data-key="a">Copilot Studio's pro-code VS Code extension</button>
+  <button class="opt" data-key="b">Microsoft Foundry's code-first agent tooling</button>
+  <button class="opt" data-key="c">The Power Automate cloud flow designer</button>
+  <button class="opt" data-key="d">Agent Builder inside Microsoft 365 Copilot</button>
+  <p class="why">Agent Builder is the easiest declarative path: guided step-by-step configuration, built-in tools, a testing workspace, and publishing to targeted users/groups — purpose → instructions → data sources → actions → test → publish. The other three options each assume maker or developer skills the author profile explicitly rules out.</p>
+</div>
+
+<h2>Apply it: three extensibility designs</h2>
+
+<p>Decide each before opening the reveal.</p>
+
+<p><strong>A.</strong> Northwind Logistics coordinators spend about 90 minutes every morning copying shipment statuses from three carrier systems into Dataverse. Two are web portals with no API and no connector; the third is a desktop-only client. The clicks are identical every day. Design the agent — including what happens when a carrier redesigns its portal.</p>
+<details><summary>Your design?</summary>
+<p><strong>Golden-rule gate first:</strong> confirm no API or connector exists — given. That licenses <strong>Computer Use</strong>. <strong>Task design:</strong> one clear goal-oriented task per carrier, broken into steps; descriptive instructions ("click the blue Track button," never coordinates); validate after each step; graceful errors. <strong>Constraints:</strong> an allowed-apps/sites list, data boundaries, prohibited actions, and time/retry limits. <strong>Configuration:</strong> enable Computer Use in agent settings, configure permissions and allowed apps, add Computer Use actions (click, type, scroll, extract, navigate), choose the reasoning mode, and watch/debug in the test canvas. <strong>Governance:</strong> least-privilege application access (an account with only the portal rights the task needs), no sensitive data entry, transparency, and action logging. <strong>The redesign answer</strong> is the governance one: UI-change fragility is inherent, so you ship monitoring plus a fallback plan — when the portal layout changes, the agent fails safe to a human queue rather than pasting garbage into Dataverse. [<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/computer-use">source</a>]</p>
+</details>
+
+<p><strong>B.</strong> Contoso Manufacturing runs Dynamics 365 F&amp;O. Compliance, HR, and Finance each want agents, and all three must interpret "approval chain," "financial dimension," and vendor status identically. Auditors require logged, explainable decisions. Design the approach.</p>
+<details><summary>Your design?</summary>
+<p><strong>Contract:</strong> MCP in F&amp;O exposes the business entities, relationships, labels, metadata, and domain objects — customers, vendors, products, approval chains, financial dimensions, ledger models — so all three agents reason over <em>one shared set of business semantics</em>: consistency across agents, grounding in real F&amp;O context (less misinformation), interoperability, and the explainability the auditors demanded. <strong>Patterns:</strong> context-driven reasoning for the compliance officer's judgment calls; workflow-integrated agents for approvals, exception escalation, and status summaries; multi-agent collaboration via shared MCP context when questions span HR + Finance + Supply Chain. <strong>Instructions per agent:</strong> purpose statement, role definition, behavior rules, context consumption logic (how MCP data is used), action boundaries. <strong>Governance:</strong> least-privilege by user identity; MCP context boundaries aligned to the compliance domains; decision logging; RAI-enforcing instructions; AI CoE ownership. [<a href="https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp">source</a>]</p>
+</details>
+
+<p><strong>C.</strong> Fabrikam's legal department wants an assistant that answers from its SharePoint site — pages, document libraries, lists, and policy wikis. Two libraries are restricted to department members and answers must never leak them. The site owner also wants help drafting and organizing new pages. Design the agent and its optimization plan.</p>
+<details><summary>Your design?</summary>
+<p><strong>Agent:</strong> a SharePoint agent built in Copilot Studio — this combines the <strong>SharePoint knowledge assistant</strong> and <strong>site owner support agent</strong> patterns. Site context is automatic: the agent knows its site, treats it as primary grounding, and adapts to the site's structure; site-owner assistance covers drafting pages, metadata, accessibility, and organization. <strong>The restricted-library requirement is not a feature to build — it's permission trimming:</strong> grounding respects user permissions via Graph, so restricted content simply doesn't exist for outsiders. Verify by testing as personas, never as the site owner (lesson 2's availability rule). <strong>Optimization:</strong> grounding strategy — SharePoint primary, well-structured and tagged content; permissions — inherit user permissions, app registration plus consent; prompt design — concise answers, clarifying questions, metadata use; lifecycle — version control, usage monitoring, periodic grounding review, and AI CoE alignment. [<a href="https://learn.microsoft.com/en-us/training/modules/design-extensibility-ai-solutions/">source</a>]</p>
+</details>
+
+<div class="ai103">
+<span class="boxlabel">AI-103 accelerator</span>
+This is the week's densest AI-103 overlap — nearly every boundary here reappears there at implementation depth. <strong>(a) Tool contracts:</strong> MCP's "what context an agent can access and how to interpret it" is the design-level version of AI-103's "define agent roles, goals, conversation-tracking approach, tool schemas" and "integrate agent tools: APIs, knowledge stores, search, content understanding, custom functions" — there, you write the schemas and wire the calls in the Foundry SDK and Python instead of selecting a pattern. <strong>(b) The declarative-vs-code-first boundary</strong> maps to choosing implementation approaches: Agent Builder and Copilot Studio's layers are AB-100 answers; in AI-103 the equivalent judgment is which Foundry pieces you assemble yourself. <strong>(c) The custom-model paths</strong> — fine-tune a foundation model, train a domain SLM, hybrid — become "build generative applications by using Foundry": deploying and consuming LLMs and small models, evaluating fabrications, relevance, quality, and safety, and integrating workflows via Foundry SDKs and connectors. Same protocols, same boundaries — AI-103 examines them at Python/SDK depth.
+</div>
+
+<div class="win">
+<span class="boxlabel">Today's win</span>
+You can now walk any requirement to the platform boundary it hits and name the sanctioned extension — an instruction tweak, a skill, an integration, a pro-code drop, an MCP contract, a declarative M365 agent, or (only when no API exists) the UI itself.
+</div>
+
+<div class="source-box">
+<span class="boxlabel">Primary source to read</span>
+<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/guidance/architecture/">Copilot Studio architecture guidance hub</a> (~20 min) — the four extensibility layers plus the fit-for-purpose, operability, and trust guidance this lesson compresses into tables.
+</div>
+
+<div class="teacher">
+Which boundary earned the most skepticism — Computer Use's "only when no API exists," the instruction layer's surprising reach, or MCP's shared-semantics promise? Push back; your questions set the agenda for next week's Deploy domain — monitoring, testing, ALM, and responsible AI in production.
+</div>
+
+<footer>
+AB-100 study workspace · Lesson 0007 · Prev: <a href="../lessons/0006-d365-customer-experience-copilot.html">lesson 0006</a> · Glossary: <a href="../reference/glossary.html">extensibility terms</a> · Next week: Deploy domain — monitoring, testing, ALM, responsible AI
+</footer>
+
+<script src="../assets/quiz.js"></script>
+</body>
+</html>
